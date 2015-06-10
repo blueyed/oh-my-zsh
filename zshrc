@@ -95,20 +95,18 @@ zstyle ':vcs_info:*:prompt:*' hgrevformat '%r'
 # Enable it depending on the current dir's filesystem type.
 autoload -U add-zsh-hook
 
-# Set ZSH_IS_SLOW_DIR
-add-zsh-hook chpwd _zshrc_chpwd_detect_slow_dir 2>/dev/null || {
-  echo 'zsh-syntax-highlighting: failed loading add-zsh-hook.' >&2
-}
+# Set ZSH_IS_SLOW_DIR.
 _is_slow_file_system() {
-  df_T=$(df -T . 2>/dev/null) || true
+  df_T=$(command df -T . 2>/dev/null) || true
   if [[ $df_T == '' ]]; then
     # 'df -T' might not be available (busybox, diskstation).
     # 'stat -f' does not detect cifs (type UNKNOWN).
     # fs_type=$(stat -f . | grep -o 'Type:.*' | cut -f2 -d\ )
-    mount_point="$(df . | awk 'END {print $NF}')"
+    mount_point="$(command df . | awk 'END {print $NF}')"
     fs_type=$(mount | awk '$3 == "'$mount_point'" { print $5 }')
   else
-    fs_type=$(echo $df_T | tail -n1 | tr -s ' ' | cut -f2 -d\  2>/dev/null)
+    # Get 2nd word from 2nd line.
+    fs_type=${${(z)${(f)df_T}[2]}[2]}
   fi
 
   case $fs_type in
@@ -128,6 +126,11 @@ _zshrc_chpwd_detect_slow_dir() {
   fi
   export ZSH_IS_SLOW_DIR
 }
+add-zsh-hook chpwd _zshrc_chpwd_detect_slow_dir 2>/dev/null || {
+  echo '_zshrc_chpwd_detect_slow_dir: failed loading add-zsh-hook.' >&2
+}
+# Init:
+_zshrc_chpwd_detect_slow_dir
 
 
 add-zsh-hook chpwd _zshrc_vcs_check_for_changes_hook # {{{
