@@ -85,7 +85,7 @@ export RI="--format ansi"
 
 # directory based VCS before repo based ones (e.g. CVS in $HOME, the latter using Git)
 # zstyle ':vcs_info:*' enable cvs svn bzr hg git
-zstyle ':vcs_info:*' enable hg bzr git
+zstyle ':vcs_info:*' enable git hg
 # zstyle ':vcs_info:bzr:*' use-simple true
 zstyle ':vcs_info:(hg|svn):*' use-simple false
 zstyle ':vcs_info:(bzr|hg|svn):*' use-simple true
