@@ -669,6 +669,8 @@ function pip() {
 }
 alias pip='noglob pip'
 alias spip='noglob sudo pip'
+
+# Print host + cwd.
 alias phwd='print -rP %M:%/'
 
 alias dL='dpkg -L'
@@ -860,6 +862,13 @@ stty -ixon 2>/dev/null
 # Use the same file for enter/leave.
 AUTOENV_FILE_LEAVE=.autoenv.zsh
 source ~/.dotfiles/lib/zsh-autoenv/autoenv.zsh
+
+_warn_old_env() {
+  if [[ -f $PWD/.env ]]; then
+    echo "WARN: found .env file. Should be .autoenv.zsh probably!" >&2
+  fi
+}
+add-zsh-hook chpwd _warn_old_env
 
 
 # Verbose completion.
