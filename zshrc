@@ -652,9 +652,13 @@ lf() {
 }
 
 
-# Generic aliases
-# Display files sorted by size
-dusch() {
+# Generic aliases.
+# NOTE: use 'function' explicitly in function definitions used in aliases.
+# Otherwise the alias expansion would also define e.g. "noglob" as a function
+# when resourcing zshrc.
+
+# Display files sorted by size.
+function dusch() {
   # setopt extendedglob bareglobqual
   du -sch -- ${~^@:-"*"}(D) | sort -rh
 }
