@@ -857,8 +857,8 @@ compdef _quilt dquilt=quilt
 stty -ixon 2>/dev/null
 
 
-AUTOENV_FILE_LEAVE=.env
-AUTOENV_LOOK_UPWARDS=1
+# Use the same file for enter/leave.
+AUTOENV_FILE_LEAVE=.autoenv.zsh
 source ~/.dotfiles/lib/zsh-autoenv/autoenv.zsh
 
 
