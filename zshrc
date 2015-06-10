@@ -663,6 +663,10 @@ function dusch() {
   du -sch -- ${~^@:-"*"}(D) | sort -rh
 }
 alias dusch='noglob dusch'
+
+function pip() {
+  command pip "$@" && rehash
+}
 alias pip='noglob pip'
 alias spip='noglob sudo pip'
 alias phwd='print -rP %M:%/'
