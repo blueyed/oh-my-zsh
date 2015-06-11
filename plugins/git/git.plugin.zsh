@@ -141,14 +141,16 @@ gcl() {
 }
 compdef _git gcl=git-clone
 
-# Helper: call a given command with (optional) files as first args at the end.
+# Helper: call a given command ($1) with (optional) files (popped from the
+# end).  This allows for "gcm 'commit message' file1 file2", but also just
+# "gcm message".
 command_with_files() {
   local cmd=$1; shift
-  # Shift existing files/dirs from the beginning of args.
+  # Pop existing files/dirs from the end of args.
   files=()
-  while (( $# > 0 )) && [[ -e $1 ]]; do
-    files+=($1)
-    shift
+  while (( $# > 1 )) && [[ -e $@[$#] ]]; do
+    files+=($@[$#])
+    shift -p
   done
   $=cmd "$*" $files
 }
