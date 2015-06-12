@@ -317,16 +317,6 @@ if ! tput longname &> /dev/null; then
   fi
 fi
 
-# Use xterm compatible escape codes for cursor shapes?
-# Used in ~/.dotfiles/oh-my-zsh/themes/blueyed.zsh-theme / my-set-cursor-shape
-# and Vim.
-if is_urxvt || [[ $TERM == screen-256color* ]] \
-  || ([[ $TERM == xterm* ]] && ! is_gnome_terminal); then
-    export _USE_XTERM_CURSOR_CODES=1
-else
-    export _USE_XTERM_CURSOR_CODES=0
-fi
-
 setopt GLOB_COMPLETE # helps with "setopt *alias<tab>" at least
 
 # Setup vimpager as pager:
