@@ -119,17 +119,20 @@ gb() {
 }
 compdef _git gb=git-branch
 
-alias gbnm='git branch --no-merged'
 alias gbm='git branch --merged'
+alias gbnm='git branch --no-merged'
 alias gbl='git blame'
+
 alias gc='git commit -v'
 alias gca='git commit -v -a'
+alias gcf='git commit --fixup'
+alias gcs='git commit --squash'
 gcl() {
   git clone --recursive $@ || return
 
   # Test if last arg is available as dir.
   local last=$@[$#]
-  if [[ -d $last ]]; then
+  if [[ $# != 1 ]] && [[ -d $last ]]; then
     cd $last
   else
     # Handle automatic dir names: "user/repo" => "repo".
@@ -162,18 +165,48 @@ alias gcm='noglob _nomatch command_with_files "git commit -m"'
 # gcma() { git commit --amend -m "${(V)*}" }
 # gcma() { git commit --amend -m "$*" }
 alias gcma='noglob _nomatch command_with_files "git commit --amend -m"'
-alias gco='git checkout'
+
+gco() {
+  # Safety net for accidental "gco ." (instead of "gco -").
+  if (( ${@[(I).]} )); then
+    echo "WARN: 'git checkout .' will remove local changes."
+    echo -n "Continue? [y/N] "
+    read -q || return 1
+    echo
+  fi
+  git checkout "$@"
+}
+# Setup proper zstyle completion context for "git-checkout".
+compdef -e 'words[1]=git-checkout; service=git-checkout; _git "$@"' gco
+
 alias gcom='git checkout master'
+alias gcoom='git checkout origin/master'
+alias gcoum='git checkout upstream/master'
+
+# Use `--no-track` to make `ggpush` not default to `origin`, when it
+# should be my fork really.  Let `ggpush` / the first push setup the tracking
+# branch/remote instead.
+gcobo() {
+  [[ -z $1 ]] && { echo "Branch name missing to create from origin/master."; return 1; }
+  git checkout --no-track -b $1 origin/master
+}
+gcobu() {
+  [[ -z $1 ]] && { echo "Branch name missing to create from upstream/master."; return 1; }
+  git checkout --no-track -b $1 upstream/master
+}
+
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
 
-alias gd='git diff --submodule'
+alias gd='git diff --submodule --patch-with-stat'
 alias gdc='git diff --cached'
 # `git diff` against upstream (usually origin/master)
 gdo() {
   _git_against_upstream diff "$@"
 }
 compdef _git gdo=git-diff
+alias gdom='git diff origin/master'
+alias gdum='git diff upstream/master'
 # `git log` against upstream (usually origin/master)
 glo() {
   local opt
@@ -184,18 +217,28 @@ compdef _git glo=git-log
 _git_against_upstream() {
   local cmd
   [ x$1 = x ] && { echo "Missing command."; return 1; }
-  cmd=(git $@ '@{upstream}..HEAD')
-  echo $cmd
-  $cmd
-  if [[ $? == 128 ]]; then
+  # u=$(git for-each-ref --format='%(upstream:short)' $(git symbolic-ref -q HEAD))
+  # [ x$u = x ] && { echo "No upstream setup for tracking."; return 2; }
+  # cmd=(git $@ $u..HEAD)
+
+  for u in '@{upstream}' origin/master; do
+    cmd=($_git_cmd $@ "$u..HEAD")
+    echo $cmd
+    $cmd
+    ret=$?
+    (( $ret == 0 )) && break
+  done
+  if [[ $ret == 128 ]]; then
     echo "Branch list:"
-    git show-branch --list
+    $_git_cmd show-branch --list
   fi
 }
-gdv() { git diff -w "$@" | view - }
+gdv() { $_git_cmd diff -w "$@" | view - }
 compdef _git gdv=git-diff
 alias gdt='git difftool'
 alias gdtc='git difftool --cached'
+alias gdtd='git difftool --dir-diff --tool=bc'
+
 alias gf='git fetch'
 alias gfa='git fetch --all --prune'
 alias gl='git l'
@@ -210,7 +253,7 @@ alias glsu='git ls-files -o --exclude-standard'
 alias gm='git merge'
 alias gmt='git mergetool --no-prompt'
 alias gp='git push'
-alias gpl='git pull --ff-only --verbose'
+alias gpl='git pull --ff-only'
 alias gpll='git pull'
 alias gpoat='git push origin --all && git push origin --tags'
 alias gr='git remote'
@@ -220,12 +263,16 @@ alias grbi='git rebase -i'
 alias grbc='git rebase --continue'
 alias grba='git rebase --abort'
 
-alias grh='git reset HEAD'
+grh() {
+  git reset "${@:-HEAD}"
+}
+compdef _git grh=git-reset
+
 alias grv='git remote -v'
 
 # Will cd into the top of the current repository
 # or submodule. NOTE: see also `RR`.
-alias grt='cd $(git rev-parse --show-toplevel || echo ".")'
+alias grt='cd $($_git_cmd rev-parse --show-toplevel || echo ".")'
 
 alias gsh='git show'
 alias gsm='git submodule'
@@ -233,7 +280,8 @@ alias gsms='git submodule summary'
 alias gsmst='git submodule status'
 alias gss='git status -s'
 alias gst='git status'
-alias gssp='git stash show -p'
+
+alias gssp='git stash show -p --stat'
 
 # NEW
 alias gsts='git stash show --text'
@@ -248,7 +296,7 @@ compdef _git git-reup=git-fetch
 gsmc() {
   [ x$1 = x ] && { echo "Commit update to which submodule?"; return 1;}
   [ -d "$1" ] || { echo "Submodule $1 not found."; return 2;}
-  summary=$(git submodule summary "$1" 2>&1)
+  summary=$($_git_cmd submodule summary "$1" 2>&1)
   if [[ $? != 0 ]]; then
     echo "Error with 'git submodule summary $1':\n$summary"; return 3
   fi
@@ -263,7 +311,7 @@ gsmc() {
   # TODO: check that commits are pushed?!
   # relevant?! echo $summary | grep -o "Warn: $1 doesn't contain commit" && return 3
 
-  git commit -m "Update submodule $1 ${${(ps: :)summary[1]}[3]}"$'\n\n'"${(F)summary}" "$1"
+  $_git_cmd commit -m "Update submodule $1 ${${(ps: :)summary[1]}[3]}"$'\n\n'"${(F)summary}" "$1"
 }
 # "git submodule add":
 gsma() {
@@ -271,18 +319,18 @@ gsma() {
   [ x$2 = x ] && { echo "Where to add submodule?"; return 2;}
   local sm=$1; shift
   local smpath=$1; shift
-  git diff --cached --exit-code > /dev/null || { echo "Index is not clean."; return 1 ; }
+  $_git_cmd diff --cached --exit-code > /dev/null || { echo "Index is not clean."; return 1 ; }
   # test for clean .gitmodules
-  local -h gitroot=./$(git rev-parse --show-cdup)
+  local -h gitroot=./$($_git_cmd rev-parse --show-cdup)
   if [[ -f $gitroot/.gitmodules ]]; then
-    git diff --exit-code $gitroot/.gitmodules > /dev/null || { echo ".gitmodules is not clean."; return 2 ; }
+    $_git_cmd diff --exit-code $gitroot/.gitmodules > /dev/null || { echo ".gitmodules is not clean."; return 2 ; }
   fi
   echo git submodule add "$@" "$sm" "$smpath"
   git submodule add "$@" "$sm" "$smpath" && \
-  summary=$(git submodule summary "$smpath") && \
+  summary=$($_git_cmd submodule summary "$smpath") && \
   summary=( ${(f)summary} ) && \
-  git commit -m "Add submodule $smpath @${${${(ps: :)summary[1]}[3]}/*.../}"$'\n\n'"${(F)summary}" "$smpath" $gitroot/.gitmodules && \
-  git submodule update --init --recursive "$smpath"
+  $_git_cmd commit -m "Add submodule $smpath @${${${(ps: :)summary[1]}[3]}/*.../}"$'\n\n'"${(F)summary}" "$smpath" $gitroot/.gitmodules && \
+  $_git_cmd submodule update --init --recursive "$smpath"
 }
 # `gsma` for ~df/vim/bundles:
 # Use basename from $1 without typical prefixes (vim-) and suffix (.git, .vim
@@ -304,51 +352,47 @@ gsmrm() {
   [ x$1 = x ] && { echo "Remove which submodule?"; return 1;}
   [ -d "$1" ] || { echo "Submodule $1 not found."; return 2;}
   [ -f .gitmodules ] || { echo ".gitmodules not found."; return 3;}
-  git diff --cached --exit-code > /dev/null || { echo "Index is not clean."; return 1 ; }
+  $_git_cmd diff --cached --exit-code > /dev/null || { echo "Index is not clean."; return 1 ; }
   # test for clean .gitmodules
-  git diff --exit-code .gitmodules > /dev/null || { echo ".gitmodules is not clean."; return 2 ; }
+  $_git_cmd diff --exit-code .gitmodules > /dev/null || { echo ".gitmodules is not clean."; return 2 ; }
   if [[ -f Makefile ]]; then
-    git diff --exit-code Makefile > /dev/null || { echo "Makefile is not clean."; return 2 ; }
+    $_git_cmd diff --exit-code Makefile > /dev/null || { echo "Makefile is not clean."; return 2 ; }
   fi
 
-  git rm --cached $1
+  $_git_cmd rm --cached $1
 
   # Manually remove submodule sections with older Git (pre 1.8.5 probably).
   # Not necessary at all, _after_ `rm --cached`?!
-  # if git config -f .git/config --get submodule.$1.url > /dev/null ; then
+  # if $_git_cmd config -f .git/config --get submodule.$1.url > /dev/null ; then
   #   # remove submodule entry from .gitmodules and .git/config (after init/sync)
-  #   git config -f .git/config --remove-section submodule.$1
+  #   $_git_cmd config -f .git/config --remove-section submodule.$1
   #   # tempfile=$(tempfile)
   #   # awk "/^\[submodule \"${1//\//\\/}\"\]/{g=1;next} /^\[/ {g=0} !g" .gitmodules >> $tempfile
   #   # mv $tempfile .gitmodules
   # fi
-  git config -f .gitmodules --remove-section submodule.$1
-  git add .gitmodules
+  $_git_cmd config -f .gitmodules --remove-section submodule.$1
+  $_git_cmd add .gitmodules
 
   if [[ -f Makefile ]]; then
     # Add the module to the `migrate` task in the Makefile and increase its name:
     grep -q "rm_bundles=.*$1" Makefile || sed -i "s:	rm_bundles=\"[^\"]*:\0 $1:" Makefile
     i=$(( $(grep '^.stamps/submodules_rm' Makefile | cut -f3 -d. | cut -f1 -d:) + 1 ))
     sed -i "s~\(.stamps/submodules_rm\).[0-9]\+~\1.$i~" Makefile
-    git add Makefile
+    $_git_cmd add Makefile
   fi
   echo "NOTE: changes staged, not committed."
   echo "You might want to 'rm $1' now or run the migrate task."
 }
+
 gswitch() {
-  # TODO: `set -e` for functions
-  [ x$1 = x ] && { echo "Change to which branch? (- for \$git_previous_branch ($git_previous_branch))"; return 1;}
-  if [[ $1 == - ]]; then
-    [ x$git_previous_branch = x ] && { echo "No previous branch."; return 2;}
-    1=$git_previous_branch
-  fi
+  [ x$1 = x ] && { echo "Change to which branch?"; return 1;}
   local cb=$(current_branch)
-  if ! git checkout $1; then
-    git stash save "Automatic stash from gswitch from: $cb"
-    git checkout $1
-    git stash pop
+  if ! $_git_cmd checkout $1; then
+    # $_git_cmd stash save "Automatic stash from gswitch from: $cb"
+    $_git_cmd stash
+    $_git_cmd checkout $1
+    $_git_cmd stash pop
   fi
-  git_previous_branch=$cb
 }
 # compdef _git gswitch=_git_commits  # calls __git_commits
 compdef _git gswitch=git-checkout
