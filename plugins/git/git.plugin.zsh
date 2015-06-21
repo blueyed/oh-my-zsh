@@ -199,7 +199,7 @@ alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
 
 alias gd='git diff --submodule --patch-with-stat'
-alias gdc='git diff --cached'
+alias gdc='git diff --cached --patch-with-stat'
 # `git diff` against upstream (usually origin/master)
 gdo() {
   _git_against_upstream diff "$@"
