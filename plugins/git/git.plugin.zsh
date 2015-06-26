@@ -252,7 +252,15 @@ alias gls='git ls-files'
 alias glsu='git ls-files -o --exclude-standard'
 alias gm='git merge'
 alias gmt='git mergetool --no-prompt'
-alias gp='git push'
+gp() {
+  # git-push: use "--force-with-lease" for "-f" (instead of "--force").
+  local opts force_idx=$(( ${@[(I)-f]} ))
+  opts=($@)
+  if (( force_idx )); then
+    opts[$force_idx]="--force-with-lease"
+  fi
+  git push "$opts"
+}
 alias gpl='git pull --ff-only'
 alias gpll='git pull'
 alias gpoat='git push origin --all && git push origin --tags'
