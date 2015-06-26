@@ -259,7 +259,7 @@ gp() {
   if (( force_idx )); then
     opts[$force_idx]="--force-with-lease"
   fi
-  git push "$opts"
+  git push $opts
 }
 alias gpl='git pull --ff-only'
 alias gpll='git pull'
