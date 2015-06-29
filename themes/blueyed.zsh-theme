@@ -278,7 +278,7 @@ prompt_blueyed_precmd () {
     local -h     cwdtext="%{$fg_no_bold[default]%}"
     local -h   nonrwtext="%{$fg_no_bold[red]%}"
     local -h    warntext="%{$fg_bold[red]%}"
-    local -h    roottext="%{$fg_bold[red]%}"
+    local -h    roottext="%{$fg_no_bold[yellow]%}"
     local -h    repotext="%{$fg_no_bold[green]%}"
     local -h     invtext="%{$fg_bold[cyan]%}"
     local -h   alerttext="%{$fg_no_bold[red]%}"
