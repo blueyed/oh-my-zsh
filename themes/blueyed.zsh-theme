@@ -399,29 +399,44 @@ prompt_blueyed_precmd () {
     #prompt_cwd="${hitext}%B%50<..<${cwd}%<<%b"
     prompt_cwd="${PR_RESET}❮ ${cwd} ${PR_RESET}❯"
 
-    # user@host for SSH connections or when inside an OpenVZ container.
-    local userathost
-    if [[ -n $SSH_CLIENT ]] \
-        || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]; then
 
-        local user
+    # user@host for SSH connections or when inside an OpenVZ container.
+    local remote
+    if (( $+SSH_CLIENT )) \
+        || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]; then
+        remote=1
+    fi
+
+    local user
+    if [[ $UID == 0 ]]; then
+        user="${roottext}%n"
+        if [[ $UID == 1000 ]]; then
+            user="${user}${fg_no_bold[green]}~"
+        fi
+    elif [[ -n $remote ]]; then
         if [[ $UID == 1000 ]]; then
             user="${fg_no_bold[green]}%n"
         else
             user="%(#.$roottext.$normtext)%n"
         fi
-
-        # http_proxy defines color of "@" between user and host
-        if [[ -n $http_proxy ]] ; then
-            prompt_at="${hitext}@"
-        else
-            prompt_at="${normtext}@"
-        fi
-
-        local -h     host="%{${fg_no_bold[$(color_for_host)]}%}%m"
-
-        userathost="${user}${prompt_at}${host}"
     fi
+
+    local host
+    # Remote (SSH) or OpenVZ?
+    if (( $remote )); then
+        host="%{${fg_no_bold[$(color_for_host)]}%}%m"
+    fi
+
+    local userathost=$user
+    if [[ -n $user ]]; then
+        if [[ -z $http_proxy ]] ; then
+            userathost+="${hitext}@"
+        elif [[ -n $host ]]; then
+            userathost+="${normtext}@"
+        fi
+    fi
+    userathost+=$host
+
 
     # Debian chroot
     if [[ -z $debian_chroot ]] && [[ -r /etc/debian_chroot ]]; then
