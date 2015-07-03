@@ -261,6 +261,7 @@ gp() {
   fi
   git push $opts
 }
+compdef _git gp=git-push
 alias gpl='git pull --ff-only'
 alias gpll='git pull'
 alias gpoat='git push origin --all && git push origin --tags'
