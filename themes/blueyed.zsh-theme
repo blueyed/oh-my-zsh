@@ -18,7 +18,7 @@
 autoload -U add-zsh-hook
 autoload -Uz vcs_info
 
-setopt prompt_subst  # Required for PR_FILLBAR.
+setopt no_prompt_subst  # No code execution via Git commit messages! (http://www.zsh.org/mla/workers/2014/msg01189.html)
 
 # Ensure that the prompt is redrawn when the terminal size changes (SIGWINCH).
 # Taken from plugins/vi-mode/vi-mode.plugin.zsh, and bart's prompt.
@@ -319,7 +319,7 @@ prompt_blueyed_precmd () {
 
         if [[ -n ${vcs_info_msg_1_} ]]; then
             # "misc" vcs info (via hook_com[misc]), e.g. "shallow".
-            rprompt_extra+=(${vcs_info_msg_1_})
+            rprompt_extra+=($vcs_info_msg_1_)
         fi
     fi
 
@@ -622,7 +622,7 @@ prompt_blueyed_precmd () {
     # Dynamically adjusted fillbar, via SIGWINCH / zle reset-prompt.
     # NOTE: -1 offset is used to fix redrawing issues after (un)maximizing,
     # when the screen is filled (the last line(s) get overwritten, and move to the top).
-    PR_FILLBAR="$PR_RESET\${(pl~(COLUMNS-($rprompt_len + $prompt_len)-1 < 0 ? 0 : COLUMNS-($rprompt_len + $prompt_len)-1)~~$char_hr~)}"
+    PR_FILLBAR="$PR_RESET${(pl~(COLUMNS-($rprompt_len + $prompt_len)-1 < 0 ? 0 : COLUMNS-($rprompt_len + $prompt_len)-1)~~$char_hr~)}"
 
     local -h prompt_sign="%{%(?.${fg_no_bold[blue]}.${fg_no_bold[red]})%}❯%{%(#.${roottext}.${prompttext})%}❯"
 
