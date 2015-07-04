@@ -315,6 +315,7 @@ prompt_blueyed_precmd () {
         # Pick up any info from preexec and vcs_info hooks.
         if [[ -n $_zsh_prompt_vcs_info ]]; then
             RPS1_list+=($_zsh_prompt_vcs_info)
+            _zsh_prompt_vcs_info=()
         fi
 
         if [[ -n ${vcs_info_msg_1_} ]]; then
