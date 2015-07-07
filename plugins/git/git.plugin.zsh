@@ -451,7 +451,11 @@ ggpush() {
   # Get args (skipping options).
   local using_force=0
   for i; do
-    [[ $i == -f || $i == --force ]] && using_force=1
+    if [[ $i == -f ]]; then  # use --force-with-lease for -f.
+      using_force=1
+      i=--force-with-lease
+    fi
+    [[ $i == --force ]] && using_force=1
     [[ $i == -* ]] && git_opts+=($i) || args+=($i)
     [[ $i == -h ]] && { echo "Usage: ggpush [--options...] [remote (Default: tracking branch / github.user)] [branch (Default: current)]"; return; }
   done
