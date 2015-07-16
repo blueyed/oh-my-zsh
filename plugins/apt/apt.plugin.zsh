@@ -62,7 +62,7 @@ _apt_cache_madison_grep_wrapper() {
         [ $VERBOSE ] && echo "Looking for '$ARG' in '$SELECTION', filtering by '$GREP_FOR'.."
         PACKAGE=""
         APT_MADISON="$( apt-cache madison "$ARG" )"
-        CANDIDATES=$( echo "$APT_MADISON" | grep "$GREP_FOR" )
+        CANDIDATES=$( echo "$APT_MADISON" | command grep "$GREP_FOR" )
         [ $DEBUG ] && echo "CANDIDATES=\"$CANDIDATES\""
         if [[ -z $SELECTION ]]; then
             if [[ -n $CANDIDATES ]]; then
@@ -112,11 +112,11 @@ _apt_cache_madison_grep_wrapper() {
             for line in $APT_MADISON; do
                 # If we need Packages|Sources, highlight both:
                 if [[ -n $SELECTION ]]; then
-                    if echo "  $line" | grep --color=auto "$GREP_FOR" | grep --color=auto "$SELECTION"; then continue; fi
-                    if echo "  $line" | grep --color=auto "$SELECTION"; then continue; fi
+                    if echo "  $line" | command grep --color=auto "$GREP_FOR" | grep --color=auto "$SELECTION"; then continue; fi
+                    if echo "  $line" | command grep --color=auto "$SELECTION"; then continue; fi
                 fi
                 # Highlight search:
-                if echo "  $line" | grep --color=auto "$GREP_FOR"; then
+                if echo "  $line" | command grep --color=auto "$GREP_FOR"; then
                     continue
                 fi
                 # Nothing highlighted:
@@ -174,7 +174,7 @@ ashowsrc() {
 }
 # Display currently installed version of a package
 apv() {
-    apol "$@" | grep '^ \*\*\*'
+    apol "$@" | command grep '^ \*\*\*'
 }
 
 if [ -n "$ZSH_VERSION" ]; then
