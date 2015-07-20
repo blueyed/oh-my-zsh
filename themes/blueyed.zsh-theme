@@ -123,103 +123,17 @@ my_get_gitdir() {
     echo $gitdir
 }
 
-# Switch between light and dark variants (solarized). {{{
-ZSH_THEME_VARIANT_CONFIG_FILE=~/.config/zsh-theme-variant
-# $1: theme to use: auto/light/dark.
-# $2: "save" to save the value to the config file.
+# Setup MY_X_THEME_VARIANT.
+eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme)"
 theme_variant() {
-    if [[ "$1" == "auto" ]]; then
-        if [[ -n $commands[get-daytime-period] ]] \
-            && [[ "$(get-daytime-period)" == 'Daytime' ]]; then
-            variant=light
-        else
-            variant=dark
-        fi
+    # setopt localoptions
+    if [[ "$1" == "-q" ]]; then
+        ~/.dotfiles/usr/bin/sh-setup-x-theme -q
     else
-        case "$1" in
-            light|dark) variant=$1 ;;
-            *)
-                echo "Current theme variant: ZSH_THEME_VARIANT=$ZSH_THEME_VARIANT."
-                echo "Theme in config: $(<$ZSH_THEME_VARIANT_CONFIG_FILE)."
-                echo "Use 'auto', 'dark' or 'light' to change it."
-                return 0 ;;
-        esac
+        eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
     fi
-    if [[ "$2" == "save" ]]; then
-        echo $1 > $ZSH_THEME_VARIANT_CONFIG_FILE
-    fi
-
-    if [[ "$variant" == "light" ]]; then
-        DIRCOLORS_FILE=~/.dotfiles/lib/dircolors-solarized/dircolors.ansi-light
-    else
-        # DIRCOLORS_FILE=~/.dotfiles/lib/dircolors-solarized/dircolors.ansi-dark
-        # Prefer LS_COLORS repo, which is more fine-grained, but does not look good on light bg.
-        DIRCOLORS_FILE=~/.dotfiles/lib/LS_COLORS/LS_COLORS
-    fi
-    zsh-set-dircolors
-
-    # Setup/change xrdb / gnome-terminal profile. {{{
-    if [[ "$ZSH_THEME_VARIANT" != "$variant" ]]; then
-        if is_urxvt && [[ -n $commands[xrdb] ]]; then
-            local curbg changed_xrdb
-            curbg="$(xrdb -query|sed -n -e '/^\*background:/ {p;q}' | tr -d '[:space:]' | cut -f2 -d:)"
-            if [[ $curbg == '#fdf6e3' ]]; then
-                if [[ $variant == "dark" ]]; then
-                    # xrdb -DSOLARIZED_DARK ~/.Xresources
-                    xrdb -merge ~/.dotfiles/lib/solarized-xresources/Xresources.dark
-                    changed_xrdb=1
-                fi
-            elif [[ $variant == "light" ]]; then
-                # xrdb -DSOLARIZED_LIGHT ~/.Xresources
-                xrdb -merge ~/.dotfiles/lib/solarized-xresources/Xresources.light
-                changed_xrdb=1
-            fi
-
-            if [[ $changed_xrdb == 1 ]]; then
-                echo "Changed xrdb theme to $variant (curbg: $curbg; variant=$variant)."
-            fi
-        elif is_gnome_terminal; then
-            local wanted_gnome_terminal_profile="Solarized-$variant"
-            # local id_light=e6e34acf-124a-43bd-ad32-46fb0765ad76
-            # local id_dark=b1dcc9dd-5262-4d8d-a863-c897e6d979b9
-
-            local default_profile_id=${$(dconf read /org/gnome/terminal/legacy/profiles:/default)//\'/}
-            # echo "default_profile_id:$default_profile_id"
-            local default_profile_name=${$(dconf read /org/gnome/terminal/legacy/profiles:/":"$default_profile_id/visible-name)//\'/}
-            # echo "default_profile_name:$default_profile_name"
-
-            # local -h cur_profile=$(gconftool-2 --get /apps/gnome-terminal/global/default_profile)
-            if [[ $default_profile_name != $wanted_gnome_terminal_profile ]]; then
-                # Get ID of wanted profile.
-
-                wanted_gnome_terminal_profile_id=$(
-                    dconf dump "/org/gnome/terminal/legacy/profiles:/" \
-                    | grep -P "^(visible-name='$wanted_gnome_terminal_profile'|\[:)" \
-                    | grep '^visible-name' -B1 | head -n1 \
-                    | sed -e 's/^\[://' -e 's/]$//')
-
-                echo "Changing gnome-terminal default profile to: $wanted_gnome_terminal_profile ($wanted_gnome_terminal_profile_id)."
-                # gconftool-2 --set --type string /apps/gnome-terminal/global/default_profile $gnome_terminal_profile
-                dconf write /org/gnome/terminal/legacy/profiles:/default "'$wanted_gnome_terminal_profile_id'"
-            fi
-        fi
-    fi  # }}}
-    # Used in ~/.vimrc.
-    export ZSH_THEME_VARIANT=$variant
 }
 compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme_variant
-
-# Init once and export the value.
-# This gets used in Vim to auto-set the background, too.
-if [[ -z "$ZSH_THEME_VARIANT" ]]; then
-    if [[ -f $ZSH_THEME_VARIANT_CONFIG_FILE ]]; then
-        ZSH_THEME_VARIANT=$(<$ZSH_THEME_VARIANT_CONFIG_FILE)
-    else
-        ZSH_THEME_VARIANT=auto
-    fi
-    theme_variant $ZSH_THEME_VARIANT
-fi
-# }}}
 
 
 # Override builtin reset-prompt widget to call the precmd hook manually
@@ -284,7 +198,7 @@ prompt_blueyed_precmd () {
     local -h     rprompt="$normtext"
     local -h   rprompthl="%{$fg_bold[default]%}"
     local -h  prompttext="%{$fg_no_bold[green]%}"
-    if [[ $ZSH_THEME_VARIANT == "light" ]]; then
+    if [[ $MY_X_THEME_VARIANT == "light" ]]; then
         local -h   dimmedtext="%{$fg_no_bold[white]%}"
     else
         local -h   dimmedtext="%{$fg_no_bold[black]%}"
