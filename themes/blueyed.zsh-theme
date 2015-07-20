@@ -411,26 +411,22 @@ prompt_blueyed_precmd () {
     local user
     if [[ $UID == 0 ]]; then
         user="${roottext}%n"
-        if [[ $UID == 1000 ]]; then
-            user="${user}${fg_no_bold[green]}~"
-        fi
     elif [[ -n $remote ]]; then
         if [[ $UID == 1000 ]]; then
-            user="${fg_no_bold[green]}%n"
+            user="%{${fg_no_bold[green]}%}%n"
         else
             user="%(#.$roottext.$normtext)%n"
         fi
     fi
 
     local host
-    # Remote (SSH) or OpenVZ?
-    if (( $remote )); then
+    if (( $remote )); then  # Remote (SSH) or OpenVZ?
         host="%{${fg_no_bold[$(color_for_host)]}%}%m"
     fi
 
     local userathost=$user
     if [[ -n $user ]]; then
-        if [[ -z $http_proxy ]] ; then
+        if [[ -z $http_proxy ]]; then
             userathost+="${hitext}@"
         elif [[ -n $host ]]; then
             userathost+="${normtext}@"
@@ -585,14 +581,13 @@ prompt_blueyed_precmd () {
     [[ -n $rprompt_extra ]] && rprompt_extra="${(pj: :)rprompt_extra}"
 
     # Assemble prompt:
-    local -h prompt="${userathost:+ $userathost }${prompt_cwd}${prompt_extra:+ $prompt_extra} "
+    local -h prompt="${userathost:+$userathost }${prompt_cwd}${prompt_extra:+ $prompt_extra} "
     local -h rprompt="${rprompt_extra}"
 
     # Attach $rprompt to $prompt, aligned to $COLUMNS.
     local -h prompt_len=$(get_visible_length $prompt)
     local -h rprompt_len=$(get_visible_length $rprompt)
 
-    # local char_hr="⎯"
     local char_hr="―"
     local fillbar_len=$((COLUMNS - (rprompt_len + prompt_len)))
 
