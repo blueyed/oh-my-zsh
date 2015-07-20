@@ -530,8 +530,9 @@ prompt_blueyed_precmd () {
 
     # Dynamically adjusted fillbar, via SIGWINCH / zle reset-prompt.
     # NOTE: -1 offset is used to fix redrawing issues after (un)maximizing,
-    # when the screen is filled (the last line(s) get overwritten, and move to the top).
-    PR_FILLBAR="$PR_RESET${(pl~(COLUMNS-($rprompt_len + $prompt_len)-1 < 0 ? 0 : COLUMNS-($rprompt_len + $prompt_len)-1)~~$char_hr~)}"
+    # when the screen is filled (the last line(s) get overwritten, and moves to the top).
+    # NOTE: (p) flag and use of $char_hr works in 5.0.8+ only.
+    PR_FILLBAR="$PR_RESET${(l~(COLUMNS-($rprompt_len + $prompt_len)-1 < 0 ? 0 : COLUMNS-($rprompt_len + $prompt_len)-1)~~―~)}"
 
     local -h prompt_sign="%{%(?.${fg_no_bold[blue]}.${fg_no_bold[red]})%}❯%{%(#.${roottext}.${prompttext})%}❯"
 
