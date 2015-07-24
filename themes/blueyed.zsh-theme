@@ -645,7 +645,9 @@ function +vi-git-untracked() {
 
     local gitdir=${vcs_comm[gitdir]}
 
-    if $_git_cmd --git-dir $gitdir ls-files --other --directory \
+    if [[ $($_git_cmd rev-parse --is-bare-repository) == true ]]; then
+        hook_com[staged]+='[bare] '
+    elif $_git_cmd --git-dir $gitdir ls-files --other --directory \
             --exclude-standard | command grep -q .; then
         hook_com[staged]+='✗ '
     fi
