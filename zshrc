@@ -294,11 +294,6 @@ if [[ -n $DISPLAY ]] || [[ -n $COLORTERM ]] || [[ -n $SSH_CLIENT ]]; then
   fi
 fi
 
-# Use custom screen-*-it terminfo (from ~/.terminfo), with fixed italics/standout for tmux.
-if [[ $TERM = screen* ]] && (( $+TMUX )) && ! [[ $TERM = *-it ]]; then
-  TERM=$TERM-it
-fi
-
 # Fix up TERM if there's no info for the currently set one (might cause programs to fail)
 if ! tput longname &> /dev/null; then
   echo "tput longname failed (TERM=$TERM)!"
