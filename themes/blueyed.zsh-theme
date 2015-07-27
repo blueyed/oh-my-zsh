@@ -17,6 +17,7 @@
 
 autoload -U add-zsh-hook
 autoload -Uz vcs_info
+autoload -U is-at-least
 
 setopt no_prompt_subst  # No code execution via Git commit messages! (http://www.zsh.org/mla/workers/2014/msg01189.html)
 
@@ -561,7 +562,11 @@ ${prompt_vcs}${prompt_sign} ${PR_RESET}"
         RPS1_list=("${(@)RPS1_list:#}") # remove empty elements (after ":#")
         # NOTE: PR_RESET without space might cause off-by-one error with urxvt after `ls <tab>` etc.
         if (( $#RPS1_list )); then
-            RPS1="${(pj:$listdelimitter:)RPS1_list}$PR_RESET "
+            if is-at-least 5.0.8; then
+                RPS1="${(pj:$listdelimitter:)RPS1_list}$PR_RESET "
+            else
+                RPS1="${(pj: :)RPS1_list}$PR_RESET "
+            fi
         else
             RPS1=
         fi
