@@ -550,7 +550,8 @@ ${prompt_vcs}${prompt_sign} ${PR_RESET}"
     # Assemble RPS1 (different from rprompt, which is right-aligned in PS1).
     if ! (( $+MC_SID )); then  # Skip for midnight commander: display issues.
         # Distribution (if on a remote system)
-        if [ -n "$SSH_CLIENT" ] ; then
+        if (( $+SSH_CLIENT )) \
+            || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]; then
             RPS1_list=("$distrotext$(get_distro)" $RPS1_list)
         fi
 
