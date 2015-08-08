@@ -47,6 +47,20 @@ VIRTUAL_ENV_DISABLE_PROMPT=1
 
 PR_RESET="%{${reset_color}%}"
 
+# SSH conection?
+is_ssh() {
+    (( $+SSH_CLIENT )) && return
+    if ! (( $+_ZSH_IS_SSH )); then
+        [[ "$(who am i | cut -f2  -d\( | cut -f1 -d:)" != "" ]]
+        _ZSH_IS_SSH=$?
+    fi
+    return $_ZSH_IS_SSH
+}
+# Remote system?
+is_remote() {
+    is_ssh || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]
+}
+
 # Remove any ANSI color codes (via www.commandlinefu.com/commands/view/3584/)
 _strip_escape_codes() {
     [[ -n $commands[gsed] ]] && sed=gsed || sed=sed # gsed with coreutils on MacOS
@@ -314,18 +328,14 @@ prompt_blueyed_precmd () {
     #prompt_cwd="${hitext}%B%50<..<${cwd}%<<%b"
     prompt_cwd="${PR_RESET}❮ ${cwd} ${PR_RESET}❯"
 
-
     # user@host for SSH connections or when inside an OpenVZ container.
     local remote
-    if (( $+SSH_CLIENT )) \
-        || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]; then
-        remote=1
-    fi
+    is_remote && remote=1 || remote=0
 
     local user
     if [[ $UID == 0 ]]; then
         user="${roottext}%n"
-    elif [[ -n $remote ]]; then
+    elif (( $remote )); then
         if [[ $UID == 1000 ]]; then
             user="%{${fg_no_bold[green]}%}%n"
         else
@@ -550,8 +560,7 @@ ${prompt_vcs}${prompt_sign} ${PR_RESET}"
     # Assemble RPS1 (different from rprompt, which is right-aligned in PS1).
     if ! (( $+MC_SID )); then  # Skip for midnight commander: display issues.
         # Distribution (if on a remote system)
-        if (( $+SSH_CLIENT )) \
-            || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]; then
+        if is_remote; then
             RPS1_list=("$distrotext$(get_distro)" $RPS1_list)
         fi
 
