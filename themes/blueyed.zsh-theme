@@ -51,7 +51,12 @@ PR_RESET="%{${reset_color}%}"
 is_ssh() {
     (( $+SSH_CLIENT )) && return
     if ! (( $+_ZSH_IS_SSH )); then
-        [[ "$(who am i | cut -f2  -d\( | cut -f1 -d:)" != "" ]]
+        # "who am i" displays current user from utmp(5).  This will be empty
+        # in most cases, e.g. with rxvt-unicode in an X session.
+        # With Konsole, it is ":0" for display :0, for ssh it is the hostname
+        # and with tmux sth like "tmux(PID).ID".
+        local host=${${:-"$(who am i)"}#*\(*}
+        [[ -n $host && $host != tmux* && $host != :* ]]
         _ZSH_IS_SSH=$?
     fi
     return $_ZSH_IS_SSH
