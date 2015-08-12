@@ -378,8 +378,8 @@ prompt_blueyed_precmd () {
             if (( $+functions[_pyenv_setup] )); then
                 _pyenv_setup
             fi
-            _zsh_cache_pwd[pyenv_version]=$(pyenv version-name)
-            _zsh_cache_pwd[pyenv_global]=${(pj+:+)${(f)"$(pyenv global)"}}
+            _zsh_cache_pwd[pyenv_version]=$(pyenv version-name 2>/dev/null)
+            _zsh_cache_pwd[pyenv_global]=${(pj+:+)${(f)"$(pyenv global 2>/dev/null)"}}
         fi
     }
 
@@ -488,11 +488,6 @@ prompt_blueyed_precmd () {
         [[ $running -gt 0 ]] && jobstatus+="${jobstext_r}${running}r"
         [[ -z $jobstatus ]] || prompt_extra+=("${normtext}jobs:${jobstatus}")
     fi
-
-    # local -h    prefix="%{$normtext%}❤ "
-
-    # tmux pane / identifier
-    # [[ -n "$TMUX_PANE" ]] && rprompt_extra+=("${TMUX_PANE//\%/%%}")
 
     # History number.
     rprompt_extra_optional+=("${normtext}!${histtext}%!")
@@ -717,8 +712,10 @@ function +vi-git-st() {
 
     # Handle remote tracking branches.
 
-    # for git prior to 1.7
-    # ahead=$($_git_cmd rev-list origin/${hook_com[branch]}..HEAD | wc -l)
+    # Only shorten master, if there's a upstream branch.
+    if [[ $local_branch == "master" ]]; then
+        local_branch_disp="m"
+    fi
 
     # Gets the commit difference counts between local and remote.
     ahead_and_behind_cmd="$_git_cmd rev-list --count --left-right HEAD...@{upstream}"
@@ -932,9 +929,12 @@ zstyle ':vcs_info:*+start-up:*' hooks start-up
     elif [[ -n $_ZSH_VCS_INFO_DIR_CHANGED ]]; then
         ret=0
 
-    elif [[ $_ZSH_VCS_INFO_CUR_VCS == git ]]; then
+    fi
+
+    if [[ $_ZSH_VCS_INFO_CUR_VCS == git ]]; then
         # Check mtime of .git dir.
         # If it changed force refresh of vcs_info data.
+        # Maintain this always, also for _ZSH_VCS_INFO_DIR_CHANGED.
         local gitdir mtime
 
         gitdir=$_ZSH_VCS_INFO_CUR_GITDIR
@@ -1103,7 +1103,7 @@ zstyle ':vcs_info:*:prompt:*' formats       "${FMT_BRANCH}"               "%m" "
 zstyle ':vcs_info:*:prompt:*' nvcsformats   ""                            ""   ""   ""
 zstyle ':vcs_info:*:prompt:*' max-exports 4
 # patch-format for Git, used during rebase.
-zstyle ':vcs_info:git*:prompt:*' patch-format "%{$fg_no_bold[cyan]%}Patch: %p [%n/%a]"
+zstyle ':vcs_info:git*:prompt:*' patch-format "%{$fg_no_bold[cyan]%}Patch: %p: [%n/%a]"
 
 
 # vim: set ft=zsh ts=4 sw=4 et:
