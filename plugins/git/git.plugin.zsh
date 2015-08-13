@@ -215,7 +215,7 @@ glo() {
 }
 compdef _git glo=git-log
 _git_against_upstream() {
-  local cmd
+  local cmd u
   [ x$1 = x ] && { echo "Missing command."; return 1; }
   # u=$(git for-each-ref --format='%(upstream:short)' $(git symbolic-ref -q HEAD))
   # [ x$u = x ] && { echo "No upstream setup for tracking."; return 2; }
