@@ -145,7 +145,7 @@ my_get_gitdir() {
 
 # Setup MY_X_THEME_VARIANT.
 eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme)"
-theme_variant() {
+theme-variant() {
     # setopt localoptions
     if [[ "$1" == "-q" ]]; then
         ~/.dotfiles/usr/bin/sh-setup-x-theme -q
@@ -153,7 +153,7 @@ theme_variant() {
         eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
     fi
 }
-compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme_variant
+compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme-variant
 
 
 # Override builtin reset-prompt widget to call the precmd hook manually
