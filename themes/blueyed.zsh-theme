@@ -758,12 +758,14 @@ function +vi-git-st() {
 # Use xterm compatible escape codes for cursor shapes?
 # Used in ~/.dotfiles/oh-my-zsh/themes/blueyed.zsh-theme / my-set-cursor-shape
 # and Vim.  For tmux, it will use Ss/Se from terminal-overrides.
+if ! (( $+_USE_XTERM_CURSOR_CODES )); then
 if is_urxvt || [[ -n $TMUX ]] || [[ $TERM == screen-256color ]] \
   || ([[ $TERM == xterm* ]] && [[ $COLORTERM != lilyterm ]] \
       && [[ -z $KONSOLE_DBUS_SESSION ]] && ! is_gnome_terminal); then
     export _USE_XTERM_CURSOR_CODES=1
 else
     export _USE_XTERM_CURSOR_CODES=0
+fi
 fi
 
 _my_cursor_shape=auto
