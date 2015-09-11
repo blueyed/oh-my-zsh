@@ -936,7 +936,6 @@ zstyle ':vcs_info:*+start-up:*' hooks start-up
 
     elif [[ -n $_ZSH_VCS_INFO_DIR_CHANGED ]]; then
         ret=0
-
     fi
 
     if [[ $_ZSH_VCS_INFO_CUR_VCS == git ]]; then
