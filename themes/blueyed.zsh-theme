@@ -147,8 +147,9 @@ my_get_gitdir() {
 eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme)"
 theme-variant() {
     # setopt localoptions
-    if [[ "$1" == "-q" ]]; then
-        ~/.dotfiles/usr/bin/sh-setup-x-theme -q
+    if (( ${@[(I)-*]} )); then
+        # Call the script if there are any option arguments, e.g. '-q' or '-d'.
+        ~/.dotfiles/usr/bin/sh-setup-x-theme "$@"
     else
         eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
     fi
