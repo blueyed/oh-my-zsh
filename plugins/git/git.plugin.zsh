@@ -395,12 +395,13 @@ gsmrm() {
 
 gswitch() {
   [ x$1 = x ] && { echo "Change to which branch?"; return 1;}
-  local cb=$(current_branch)
-  if ! $_git_cmd checkout $1; then
-    # $_git_cmd stash save "Automatic stash from gswitch from: $cb"
-    $_git_cmd stash
-    $_git_cmd checkout $1
-    $_git_cmd stash pop
+  local output="$($_git_cmd checkout $1 2>&1)"
+  echo $output
+  if [[ $output == "error: Your local changes"* ]]; then
+    setopt localoptions xtrace
+    $_git_cmd stash save \
+      && $_git_cmd checkout $1 \
+      && $_git_cmd stash pop
   fi
 }
 # compdef _git gswitch=_git_commits  # calls __git_commits
