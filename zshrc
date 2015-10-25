@@ -202,13 +202,6 @@ unalias -s d 2>/dev/null
 
 watch=(notme)
 
-# autojump
-source ~/.dotfiles/autojump/bin/autojump.zsh
-# XXX: _j() has been removed in autojump!?! commit 49a0d70
-# fpath=(~/.dotfiles/autojump/bin $fpath)
-# Obsolete with master.
-export AUTOJUMP_KEEP_SYMLINKS=1
-
 # Load bash completion system
 # via http://zshwiki.org/home/convert/bash
 autoload -U bashcompinit
@@ -413,23 +406,6 @@ compdef "_arguments '-u[user name]:user name:_users' '*::arguments: _normal'" su
 
 # connect to qemu system by default
 export VIRSH_DEFAULT_CONNECT_URI=qemu:///system
-
-# Special treatment for verdi4u machines
-# WARNING: '-f' might be slow!!
-# if [[ $(hostname -f 2>/dev/null) = *.verdi4u.de ]]; then
-#   # Get recent python into $PATH for autojump
-#   # (the first python from /opt != 2.4/2.5)
-#   if [[ $(python -V 2>&1) = Python\ 2.[45]* ]]; then
-#     for i in /opt/python /opt/py*(/) ; do
-#       i=${i%/}
-#       test -f $i/bin/python || continue
-#       if [[ $($i/bin/python -V 2>&1 ) != Python\ 2.[45]* ]]; then
-#         path=($i/bin $path)
-#         break
-#       fi
-#     done
-#   fi
-# fi
 
 # Autoload all functions.
 autoload $ZSH/functions/[^_]*(:t)
@@ -715,7 +691,6 @@ incognito() {
     }
     HISTFILE=$_incognito_save_HISTFILE
     DIRSTACKFILE=$_incognito_save_DIRSTACKFILE
-    add-zsh-hook -d preexec autojump_preexec
     add-zsh-hook -d precmd  _zsh_persistent_history_precmd_hook
     unset _incognito_save_HISTFILE _incognito_save_DIRSTACKFILE
   elif [[ -n $_incognito_save_HISTFILE ]]; then
@@ -726,7 +701,6 @@ incognito() {
     _incognito_save_DIRSTACKFILE=$DIRSTACKFILE
     unset HISTFILE
     DIRSTACKFILE=/dev/null
-    add-zsh-hook -d preexec autojump_preexec
     add-zsh-hook -d precmd  _zsh_persistent_history_precmd_hook
   fi
 }
