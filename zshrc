@@ -887,7 +887,7 @@ export DEBEMAIL='ubuntu@thequod.de'
 
 reloadzsh() {
   source ~/.zshenv
-  source ~/.zshrc
+  ZSHRC_EXEC_COMMAND= source ~/.zshrc
 }
 
 
