@@ -6,3 +6,6 @@ projects.zsh
 *.swp
 !custom/example.zshcache
 cache/
+
+# Ignore local files, e.g. lib/hash_dirs.local.zsh.
+*.local.zsh
