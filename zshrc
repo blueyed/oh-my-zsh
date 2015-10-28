@@ -68,8 +68,6 @@ REPORTTIME=10 # print elapsed time when more than 10 seconds
 setopt MAIL_WARNING
 setopt HIST_IGNORE_SPACE # Ignore commands with leading space
 
-setopt MARK_DIRS # Append a trailing `/' to all directory names resulting from filename generation (globbing).
-
 setopt NUMERIC_GLOB_SORT
 setopt EXTENDED_GLOB
 
