@@ -396,17 +396,17 @@ prompt_blueyed_precmd () {
             local v venv_found
             for v in ${(s~:~)_zsh_cache_pwd[pyenv_version]}; do
                 if [[ ${VIRTUAL_ENV##*/} == $v ]]; then
-                    prompt_extra+=("${venvtext}ⓔ ${VIRTUAL_ENV##*/}")
+                    prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/})")  # ⓔ
                     venv_found=1
                     break
                 fi
             done
             if [[ -z $venv_found ]]; then
                 # VIRTUAL_ENV set, but not in path and not pyenv's name: add a note.
-                prompt_extra+=("${venvtext}ⓔ ${VIRTUAL_ENV##*/} (NOT_IN_PATH)")
+                prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/}(NOT_IN_PATH))")
             fi
         else
-            prompt_extra+=("${venvtext}ⓔ ${VIRTUAL_ENV##*/}")
+            prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/})")
         fi
     fi
 
