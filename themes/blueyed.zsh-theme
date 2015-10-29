@@ -85,7 +85,7 @@ get_visible_length() {
 }
 
 is_urxvt() {
-    [[ $TERM == rxvt* ]] || [[ $COLORTERM == rxvt* ]]
+    [[ $TERM == rxvt* ]]
 }
 
 # Check if we're running in gnome-terminal.
