@@ -143,8 +143,7 @@ my_get_gitdir() {
     echo $gitdir
 }
 
-# Setup MY_X_THEME_VARIANT.
-eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme)"
+# Setup/manage MY_X_THEME_VARIANT.
 theme-variant() {
     # setopt localoptions
     if (( ${@[(I)-*]} )); then
