@@ -464,11 +464,11 @@ prompt_blueyed_precmd () {
         fi
     fi
 
-    # Shell level: display it if >= 1 (but substract tmux/tmuxifier levels).
-    local disp_SHLVL=$((SHLVL - $+TMUX - ($+TMUXIFIER * 2)))
-    if (( disp_SHLVL > 1 )); then
-        rprompt_extra+=("%fSHLVL:${disp_SHLVL}")
-    fi
+    # # Shell level: display it if >= 1 (but substract tmux/tmuxifier levels).
+    # local disp_SHLVL=$((SHLVL - $+TMUX - ($+TMUXIFIER * 2)))
+    # if (( disp_SHLVL > 1 )); then
+    #     rprompt_extra+=("%fSHLVL:${disp_SHLVL}")
+    # fi
 
     if (( $+MC_SID )); then
         prompt_extra+=("$normtext(mc)")
