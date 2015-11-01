@@ -614,15 +614,17 @@ function +vi-git-stash() {
         local -a stashes
         # Get stashes as array, with subject and (relative) date per line.
         stashes=(${(ps:\n\n:)"$($_git_cmd --git-dir="${vcs_comm[gitdir]}" \
-            stash list --pretty=format:%s%n%cr%n)"})
+            stash list --pretty=format:%s%n%cr%n%gd%n)"})
 
+        local top_is_from_HEAD=0
         if (( $#stashes )); then
             # Display a different icon based on where the stash is from.
             local top_stash_branch
             # Format: WIP on persistent-tag-properties: 472e3b1 Handle persistent tag layout in tag.new
-            top_stash_branch="${${${stashes[1]}#(WIP\ on|On)\ }%%:*}"
+            top_stash_branch="${${${${(f)stashes[1]}[1]}#(WIP\ on|On)\ }%%:*}"
             if [[ $top_stash_branch == $hook_com[branch] ]]; then
                 hook_com[misc]+="$hitext☶ "
+                top_is_from_HEAD=1
             else
                 hook_com[misc]+="$hitext☵ "
             fi
@@ -642,6 +644,21 @@ function +vi-git-stash() {
                     short_time_unit+=${top_stash_time[2][2]}
                 fi
                 hook_com[misc]+="$normtext(${top_stash_time[1]}$short_time_unit)"
+            fi
+
+            # Display IDs of fitting stashes, if top stash is not for HEAD.
+            if [[ $top_is_from_HEAD == 0 ]]; then
+                local stash_branch i
+                local -a fitting
+                for i in {1..$#stashes}; do
+                    stash_branch="${${${${(f)stashes[$i]}[1]}#(WIP\ on|On)\ }%%:*}"
+                    if [[ $stash_branch == $hook_com[branch] ]]; then
+                        fitting+=("${${${${(f)stashes[$i]}[3]}#stash@\{}%\}}")
+                    fi
+                done
+                if (( $#fitting )); then
+                    hook_com[misc]+=",fit:${(j:,:)fitting}"
+                fi
             fi
         fi
     fi
