@@ -561,7 +561,8 @@ ${prompt_vcs}${prompt_sign} ${PR_RESET}"
     if ! (( $+MC_SID )); then  # Skip for midnight commander: display issues.
         # Distribution (if on a remote system)
         if is_remote; then
-            RPS1_list=("$distrotext$(get_distro)" $RPS1_list)
+            [[ -z $_ZSH_DISTRO ]] && _ZSH_DISTRO="$(get_distro)"
+            RPS1_list=("$distrotext${_ZSH_DISTRO}" $RPS1_list)
         fi
 
         # Keymap indicator for dumb terminals.
