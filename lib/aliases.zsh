@@ -309,6 +309,13 @@ screen() {
 }
 fi
 
+# Systemd.
+if (( $+commands[systemctl] )); then
+  alias sc=systemctl
+  alias ssc="sudo systemctl"
+  alias jxe="journalctl -xe"
+fi
+
 # Colored cat/less.
 alias ccat='pygmentize -g'
 cless() {
