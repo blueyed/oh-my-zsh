@@ -703,6 +703,37 @@ incognito() {
   fi
 }
 
+# Setup https://github.com/clvv/fasd. {{{
+# Based on prezto / fasd --init auto
+if (( $+commands[fasd] )); then
+  () {
+    local cache_file=~/.cache/fasd-zsh.cache
+    if [[ ${commands[fasd]} -nt $cache_file || ! -s $cache_file ]]; then
+      # fasd --init posix-alias zsh-hook zsh-ccomp zsh-ccomp-install \
+      #   zsh-wcomp zsh-wcomp-install >! "$cache_file"
+      fasd --init auto >! "$cache_file"
+    fi
+    source $cache_file
+
+    function fasd_cd {
+      local fasd_ret="$(fasd -d "$@")"
+      if [[ -d "$fasd_ret" ]]; then
+        cd "$fasd_ret"
+      else
+        print "$fasd_ret"
+      fi
+    }
+
+    # Changes the current working directory interactively.
+    alias j='fasd_cd -i'
+
+    bindkey '^X^A' fasd-complete    # C-x C-a to do fasd-complete (fils and directories)
+    bindkey '^X^F' fasd-complete-f  # C-x C-f to do fasd-complete-f (only files)
+    bindkey '^X^D' fasd-complete-d  # C-x C-d to do fasd-complete-d (only directories)
+  }
+fi  # }}}
+
+# Misc {{{1
 # Minimal prompt: useful when creating a test case for copy'n'paste.
 _zsh_minimalprompt_preexec() {
   # XXX: workaround $2 having a trailing space with assignments.
