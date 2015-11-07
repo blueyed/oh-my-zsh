@@ -874,6 +874,8 @@ add-zsh-hook chpwd _warn_old_env
 # zstyle ':completion:*:warnings' format 'No matches for: %d'
 # zstyle ':completion:*' group-name ''
 
+# Provide hosts from ~/.pgpass for PostgreSQL completion.
+zstyle -e ':completion::complete:(pg_*|psql):*' hosts 'reply=($(sed "s/:.*//" ~/.pgpass))'
 
 # Directories {{{
 # Changing/making/removing directory
