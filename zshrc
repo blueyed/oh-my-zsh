@@ -709,23 +709,9 @@ if (( $+commands[fasd] )); then
   () {
     local cache_file=~/.cache/fasd-zsh.cache
     if [[ ${commands[fasd]} -nt $cache_file || ! -s $cache_file ]]; then
-      # fasd --init posix-alias zsh-hook zsh-ccomp zsh-ccomp-install \
-      #   zsh-wcomp zsh-wcomp-install >! "$cache_file"
       fasd --init auto >! "$cache_file"
     fi
     source $cache_file
-
-    function fasd_cd {
-      local fasd_ret="$(fasd -d "$@")"
-      if [[ -d "$fasd_ret" ]]; then
-        cd "$fasd_ret"
-      else
-        print "$fasd_ret"
-      fi
-    }
-
-    # Changes the current working directory interactively.
-    alias j='fasd_cd -i'
 
     bindkey '^X^A' fasd-complete    # C-x C-a to do fasd-complete (fils and directories)
     bindkey '^X^F' fasd-complete-f  # C-x C-f to do fasd-complete-f (only files)
