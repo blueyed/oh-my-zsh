@@ -35,22 +35,14 @@ prepend_path_if_not_in_already ~/.dotfiles/usr/bin ~/bin
 # For pipsi:
 prepend_path_if_not_in_already ~/.local/bin
 
-# Add various "bin" directories to $path
-# TODO: might add both /usr/local/apache2_2.2.16/bin /usr/local/apache2_2.2.24/bin to path!
-#       Reverse-sort as a workaround?
-#       Or only use symlinks (apache2 points there)
-# NOTE: /usr/local/apache2/bin etc get setup @bp via /etc/profile.d/ already.
-# for i in /usr/local/*(N/:A) /opt/*(N/:A) /var/lib/gems/*(N/:A) ; do
-for i in /var/lib/gems/*(N/:A) ; do
-  test -d $i/bin || continue
-  append_path_if_not_in_already $i/bin
-done
+# Add various "bin" directories to $path.
+() {
+  local i
+  for i in ~/.gem/ruby/*/bin(N/) /var/lib/gems/*/bin(N/:A); do
+    append_path_if_not_in_already $i
+  done
+}
 
-# Add any custom directories, which might exist
-for i in /opt/eclipse ; do
-  test -d $i || continue
-  append_path_if_not_in_already $i
-done
 
 # Add specific paths for root; used on diskstation
 if [[ $USER == root ]]; then
