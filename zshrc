@@ -908,8 +908,14 @@ reloadzsh() {
 }
 
 
-# Source local rc file if any {{{1
+# Source local rc file if any.
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
+
+# Change to previous dir (requires dirstack), but not for login shells.
+if ! (( $+_ZSH_DONE_CD_DASH )) && ! [[ -o login ]]; then
+  _ZSH_DONE_CD_DASH=1
+  cd $OLDPWD
+fi
 
 # zsh_stop_debug_xtrace
 
