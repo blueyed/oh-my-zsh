@@ -118,7 +118,7 @@ ffind() {
 # ls
 LS_OPTIONS=(--color=auto -h -F)
 # TODO: lazily determine this on first call to ls?  See lib/grep.zsh (_setup_grep_alias).
-if command ls --help 2>&1|grep -- --hide; then
+if command ls --help 2>&1|grep -q -- --hide; then
   LS_OPTIONS+=(--hide='*.pyc')
 fi
 alias ls='ls ${LS_OPTIONS}'
