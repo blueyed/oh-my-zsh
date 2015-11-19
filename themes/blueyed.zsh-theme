@@ -1076,7 +1076,7 @@ _force_vcs_info_preexec() {
     _zsh_prompt_vcs_info=()
     (( $_ZSH_VCS_INFO_FORCE_GETDATA )) && return
 
-    if _user_execed_command $1 $2 $3 '(git|hg|bcompare|nvim|vim)'; then
+    if _user_execed_command $1 $2 $3 '(git|hg|bcompare|vi|nvim|vim)'; then
         _zsh_prompt_vcs_info+=("%{${fg[cyan]}%}⟳(c)")
         _ZSH_VCS_INFO_FORCE_GETDATA=1
     fi
