@@ -55,7 +55,8 @@ is_ssh() {
         # in most cases, e.g. with rxvt-unicode in an X session.
         # With Konsole, it is ":0" for display :0, for ssh it is the hostname
         # and with tmux sth like "tmux(PID).ID".
-        local host=${${:-"$(who am i)"}#*\(*}
+        # NOTE: not available on diskstation (busybox 1.16.1).
+        local host=${${:-"$(who am i 2>/dev/null)"}#*\(*}
         [[ -n $host && $host != tmux* && $host != :* ]]
         _ZSH_IS_SSH=$?
     fi
