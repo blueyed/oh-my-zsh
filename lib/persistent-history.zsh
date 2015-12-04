@@ -54,7 +54,7 @@ _zsh_persistent_history_precmd_hook() {
   if (( duration > 0 )); then
     output+=" [dur:${duration}s]"
     if (( duration > 10 )); then
-      output+=" [endtime:${(%):-'%D{%T.%.}'}]"
+      output+=" [endtime:${(%):-%D{%T.%.\}}]"
     fi
   fi
   if [[ -n $_zsh_persistent_history_preexec_expanded ]]; then
