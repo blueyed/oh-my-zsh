@@ -780,12 +780,12 @@ zsh_disable_highlighting() {
 export BASE16_SHELL_DIR=~/.dotfiles/lib/base16/base16-shell
 base16_scheme() {
   if [[ -n $1 ]]; then
-    export BASE16_SCHEME=$1
+    export BASE16_THEME=$1
   else
-    echo "Reloading $BASE16_SCHEME..."
+    echo "Reloading $BASE16_THEME..."
   fi
-  local base16_scheme_file=$BASE16_SHELL_DIR/base16-$BASE16_SCHEME.sh
-  echo "Loading $BASE16_SCHEME..."
+  local base16_scheme_file=$BASE16_SHELL_DIR/base16-$BASE16_THEME.sh
+  echo "Loading $BASE16_THEME..."
   [[ -s $base16_scheme_file ]] && source $base16_scheme_file
 }
 # completion for base16_scheme function
