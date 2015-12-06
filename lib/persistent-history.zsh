@@ -1,7 +1,8 @@
 # Keep a persistent history of all commands executed in a single file/place.
 _zsh_persistent_history_logfile=~/.local/share/zsh/history.log
 
-# Enable it by `touch`ing the file.
+# Enable it by `touch`ing the file:
+# % mkdir -m 700 ~/.local/share/zsh && touch ~/.local/share/zsh/history.log
 if ! [[ -f $_zsh_persistent_history_logfile ]]; then
   return
 fi
