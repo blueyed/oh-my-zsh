@@ -4,13 +4,8 @@
 #
 # NOTE: $path adjustment is done in .zshenv
 
-# # Skip this, if in a subshell (e.g. in tmux)
-# if [[ -n $SHLVL ]] && [[ $SHLVL > 1 ]]; then
-#   return
-# fi
-
 # Path to your oh-my-zsh configuration.
-export ZSH=$HOME/.oh-my-zsh
+export ZSH=$HOME/.dotfiles/oh-my-zsh
 
 # Profiling / Tracing. {{{
 # Start debug tracing (NOTE: does not work from a function).
