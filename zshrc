@@ -674,10 +674,8 @@ alias tignews='tig HEAD@{1}..HEAD@{0}'
 alias tigin='tig ..@{u}'
 alias tigfin='git fetch && tig ..@{u}'
 
-viack() {
-  vi -c "Ack $*"
-}
 viag() {
+  (( $# )) || { echo "Usage: $0 <arguments to :Ag in vi>"; return 64 }
   vi -c "Ag $*"
 }
 
