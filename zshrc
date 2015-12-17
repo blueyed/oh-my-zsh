@@ -305,18 +305,38 @@ fi
 
 setopt GLOB_COMPLETE # helps with "setopt *alias<tab>" at least
 
-# use full blown vim always
-if [ "$commands[(I)vim]" ]; then
-  alias vi=vim
-fi
+# (Neo)vim setup {{{
+# Setup EDITOR env var (should be a command) and "vi" alias.
+() {
+  local cmd
+  for cmd in nvim vim vi; do
+    if [[ -n $commands[(I)$cmd] ]]; then
+      export EDITOR=$cmd
+      alias vi=$cmd
 
-# Setup EDITOR env var, should be a command.
-for cmd in nvim vim vi; do
-  if [[ -n $commands[(I)$cmd] ]]; then
-    export EDITOR=$cmd
-    break
+      if [[ cmd == nvim ]]; then
+        alias view='nvim -R'
+        alias vimdiff='nvim -d'
+      fi
+
+      break
+    fi
+  done
+}
+
+# Edit a tag within a given base dir, e.g. `vit ~df vit`, where `vit ~df` is
+# aliased to `vdf` - so you can use `vdf vit` to edit this functon.
+# cd'ing in a subshell with DIRSTACKFILE unset won't mess with my dirstack.
+vit () {(
+  if (( $# > 1 )); then
+    unset DIRSTACKFILE
+    cd $1; shift
   fi
-done
+  vi -t "$@"
+  )}
+alias vdf="vit ~df"
+compdef -e 'cd ${~words[2]}; _complete_tag' vit
+# }}}
 
 # Restart network interface
 ifrestart() {
