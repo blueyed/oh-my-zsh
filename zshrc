@@ -305,12 +305,6 @@ fi
 
 setopt GLOB_COMPLETE # helps with "setopt *alias<tab>" at least
 
-# Setup vimpager as pager:
-# NOTE: quite a few drawbacks: load time, usability (not less, not Vim, …)
-# export PAGER=~/.dotfiles/lib/vimpager/vimpager
-# alias less=$PAGER
-# alias zless=$PAGER
-
 # use full blown vim always
 if [ "$commands[(I)vim]" ]; then
   alias vi=vim
