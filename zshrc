@@ -909,8 +909,7 @@ reloadzsh() {
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 
 # Change to previous dir (requires dirstack), but not for login shells.
-if ! (( $+_ZSH_DONE_CD_DASH )) && ! [[ -o login ]]; then
-  _ZSH_DONE_CD_DASH=1
+if ! (( $+ZSH_NO_CD_DASH )) && ! [[ -o login ]] && ! (( $+TMUX )); then
   cd $OLDPWD
 fi
 
