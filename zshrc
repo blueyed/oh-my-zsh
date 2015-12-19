@@ -308,12 +308,10 @@ setopt GLOB_COMPLETE # helps with "setopt *alias<tab>" at least
     if [[ -n $commands[(I)$cmd] ]]; then
       export EDITOR=$cmd
       alias vi=$cmd
-
-      if [[ cmd == nvim ]]; then
+      if [[ $cmd == nvim ]]; then
         alias view='nvim -R'
         alias vimdiff='nvim -d'
       fi
-
       break
     fi
   done
