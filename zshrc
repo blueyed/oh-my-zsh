@@ -424,10 +424,6 @@ autoload $ZSH/functions/[^_]*(:t)
 # Mikachu | ie, use the zle-isearch-exit and zle-isearch-update widgets
 TRAPINT() { print -nP %F{red}%B\^C%f%b; return 1 }
 
-# exit zsh like vim
-alias :q=exit
-alias ZZ=exit
-
 alias map='xargs -n1 -r'
 
 alias vimrc='vim ~df/vimrc'
