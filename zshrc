@@ -328,7 +328,7 @@ vit () {(
   vi -t "$@"
   )}
 alias vdf="vit ~df"
-compdef -e 'cd ${~words[2]}; _complete_tag' vit
+compdef -e '(( CURRENT > 2 )) && cd ${~words[2]}; _complete_tag' vit
 # }}}
 
 # Restart network interface
