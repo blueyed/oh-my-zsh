@@ -904,7 +904,7 @@ reloadzsh() {
 
 # Change to previous dir (requires dirstack), but not for login shells.
 if ! (( $+ZSH_NO_CD_DASH )) && ! [[ -o login ]] && ! (( $+TMUX )); then
-  cd $OLDPWD
+  [[ -d $OLDPWD ]] && cd $OLDPWD
 fi
 
 # zsh_stop_debug_xtrace
