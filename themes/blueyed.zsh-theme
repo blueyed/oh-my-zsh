@@ -233,6 +233,15 @@ prompt_blueyed_precmd () {
     # Optional parts for rprompt; skipped, if they would cause a linebreak.
     typeset -a rprompt_extra_optional
 
+    local i
+
+    # Check for special exported vars.
+    for i in GNUPGHOME; do
+        if [[ ${(tP)${i}} == *-export* ]]; then
+            rprompt_extra+=("${warntext}$i!")
+        fi
+    done
+
     prompt_vcs=""
     # Check for exported GIT_DIR (used when working on bup backups).
     # Force usage of vcs_info then, also on slow dirs.
@@ -266,7 +275,7 @@ prompt_blueyed_precmd () {
     # Fallback to default, if "target" is used
     [ "$ln_color" = "target" ] && ln_color="01;36"
     [[ -z $ln_color ]] && ln_color="%{${fg_bold[cyan]}%}" || ln_color="%{"$'\e'"[${ln_color}m%}"
-    local cur color color_off i cwd_split
+    local cur color color_off cwd_split
     local -a colored
     if [[ $cwd == '/' ]]; then
         cwd=${nonrwtext}/
