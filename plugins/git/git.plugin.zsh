@@ -341,13 +341,35 @@ alias gsmst='git submodule status'
 alias gss='git status -s'
 alias gst='git status'
 
-alias gssp='git stash show -p --stat'
-
-# NEW
-alias gsts='git stash show --text'
+# git-stash.
+alias gsts='git stash show --text -p --stat'
 alias gsta='git stash'
-alias gstp='git stash pop'
-alias gstd='git stash drop'
+alias gstas='git stash -k'
+alias gstl='git stash list --format="%C(yellow)%gd: %C(reset)%gs %m%C(bold)%cr"'
+
+# 'git stash pop', which warns when using it on a different branch.
+gstp() {
+  local log stash_ref
+  if [[ "$1" = <-> ]] || [[ -z "$1" ]]; then
+    stash_ref="stash@{${1:-0}}"
+  else
+    stash_ref="$1"
+  fi
+  log=$(git log -g --pretty="%s" $stash_ref -1) || {
+    echo "Failed to display log for $stash_ref."
+    return 1
+  }
+  local current_branch="$(current_branch)"
+  if ! [[ $log =~ "^(WIP on|On) ${current_branch}" ]]; then
+    echo "Warning: stash appears to be for another branch."
+    echo "Current: ${current_branch}"
+    echo "Log: $log"
+    echo -n "Continue? "
+    read -q || { echo; return }; echo
+  fi
+  git stash pop $stash_ref
+}
+compdef -e 'words=(git stash pop "${(@)words[2,-1]}"); ((CURRENT+=2)); _normal' gstp
 
 # git-up and git-reup from ~/.dotfiles/usr/bin
 compdef _git git-up=git-fetch
