@@ -6,18 +6,16 @@ setopt noglobalrcs
 # missing. This helps to keep VirtualEnv's path at the front.
 # (in case of using tmux after `workon`, where each window spawns a new shell)
 append_path_if_not_in_already() {
+  local i
   for i; do
-    # echo "Check: $i" >> /tmp/O
     (( ${path[(i)$i]} <= ${#path} )) && continue
-    # echo "Add: $i" >> /tmp/O
     path+=($i)
   done
 }
 prepend_path_if_not_in_already() {
+  local i
   for i; do
-    # echo "Check: $i" >> /tmp/O
     (( ${path[(i)$i]} <= ${#path} )) && continue
-    # echo "Prepend: $i" >> /tmp/O
     path=($i $path)
   done
 }

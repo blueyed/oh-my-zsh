@@ -469,6 +469,7 @@ make () {
 
 
 adbpush() {
+  local i
   for i; do
     echo "Pushing $i to /sdcard/$i:t"
     adb push $i /sdcard/$i:t
@@ -507,6 +508,7 @@ _tmux_pane_words() {
   fi
   # capture current pane first
   w=( ${(u)=$(tmux capture-pane -J -p)} )
+  local i
   for i in $(tmux list-panes -F '#P'); do
     # skip current pane (handled above)
     [[ "$TMUX_PANE" = "$i" ]] && continue
@@ -645,7 +647,13 @@ alias phwd='print -rP %M:%/'
 alias dL='dpkg -L'
 alias dS='dpkg -S'
 # grep in the files of a package, e.g. `dG acpid screen`.
-dG() { p=$1; shift; for i in $(dpkg -L $p); test -f $i && grep -H $@ -- $i }
+dG() {
+  local i p
+  p=$1; shift
+  for i in $(dpkg -L $p); do
+    test -f $i && grep -H $@ -- $i
+  done
+}
 
 # Custom command modifier to not error on non-matches; similar to `noglob`.
 _nomatch () {
