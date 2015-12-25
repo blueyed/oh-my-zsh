@@ -749,8 +749,9 @@ minimalprompt() {
   fi
 }
 
+# Update tty information for gpg-agent.
 export GPG_TTY=$(tty)
-
+gpg-connect-agent UPDATESTARTUPTTY /bye >/dev/null
 
 # Source zsh-syntax-highlighting when not in Vim's shell
 if [[ -z $VIM ]]; then
