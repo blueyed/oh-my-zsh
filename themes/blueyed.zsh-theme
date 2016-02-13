@@ -236,7 +236,8 @@ prompt_blueyed_precmd () {
     local i
 
     # Check for special exported vars (with non-default values).
-    typeset -A envvars_with_defaults=(GNUPGHOME ~/.gnupg)
+    typeset -A envvars_with_defaults
+    envvars_with_defaults=(GNUPGHOME ~/.gnupg)
     for i in ${(k)envvars_with_defaults}; do
         if [[ ${(tP)i} == *-export* ]] && [[ ${(P)i} != $envvars_with_defaults[$i] ]]; then
             rprompt_extra+=("${warntext}$i!")
