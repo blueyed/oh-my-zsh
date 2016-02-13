@@ -793,13 +793,15 @@ export BASE16_SHELL_DIR=~/.dotfiles/lib/base16/base16-shell
 base16_scheme() {
   if [[ -n $1 ]]; then
     export BASE16_THEME=$1
-  else
-    echo "Reloading $BASE16_THEME..."
+    echo "Loading $BASE16_THEME..."
   fi
   local base16_scheme_file=$BASE16_SHELL_DIR/base16-$BASE16_THEME.sh
-  echo "Loading $BASE16_THEME..."
   [[ -s $base16_scheme_file ]] && source $base16_scheme_file
 }
+# Setup theme (once).  Required for/with vim-in-term.
+if [[ $TERM != "linux" ]]; then
+  base16_scheme
+fi
 # completion for base16_scheme function
 compdef "compadd $BASE16_SHELL_DIR/*.sh(:t:r:s/base16-/)" base16_scheme
 
