@@ -750,8 +750,10 @@ minimalprompt() {
 }
 
 # Update tty information for gpg-agent.
-export GPG_TTY=$(tty)
-gpg-connect-agent UPDATESTARTUPTTY /bye >/dev/null
+if [[ -n "$GPG_TTY" ]]; then
+  GPG_TTY=$(tty)
+  gpg-connect-agent UPDATESTARTUPTTY /bye >/dev/null
+fi
 
 # Source zsh-syntax-highlighting when not in Vim's shell
 if [[ -z $VIM ]]; then
