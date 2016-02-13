@@ -795,7 +795,7 @@ base16_scheme() {
     export BASE16_THEME=$1
     echo "Loading $BASE16_THEME..."
   elif [[ -z $BASE16_THEME ]]; then
-    export BASE16_THEME=solarized.${MY_X_THEME_VARIANT:-dark}
+    export BASE16_THEME="solarized.${MY_X_THEME_VARIANT:-dark}"
   fi
   local base16_scheme_file=$BASE16_SHELL_DIR/base16-$BASE16_THEME.sh
   [[ -s $base16_scheme_file ]] && source $base16_scheme_file
