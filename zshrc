@@ -54,8 +54,20 @@ zstyle ':completion::complete:grunt::options:' show_grunt_path yes
 fpath=(~/.dotfiles/lib/zsh-completions/src $fpath)
 fpath=(~/.dotfiles/lib/docker-zsh-completion $fpath)
 
+# Define FZF_DEFAULT_OPTS before the theme gets loaded.
+# Should not be overwritten in case it exists (tmux).
+if (( $+commands[fzf] )) && ! (( $+FZF_DEFAULT_OPTS )); then
+  export FZF_DEFAULT_OPTS=--extended
+fi
+
 source $ZSH/oh-my-zsh.sh
 
+# fzf. {{{
+if (( $+commands[fzf] )) && [[ -f /etc/profile.d/fzf.zsh ]]; then
+  # NOTE: binds ^R, which gets overridden below, and I'll use F3 instead.
+  source /etc/profile.d/fzf.zsh
+  [[ -n $terminfo[kf3] ]] && bindkey $terminfo[kf3] fzf-history-widget
+fi  # }}}
 # Customize to your needs...
 
 REPORTTIME=10 # print elapsed time when more than 10 seconds
