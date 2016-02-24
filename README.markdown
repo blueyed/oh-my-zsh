@@ -122,16 +122,6 @@ If you have many functions that go well together, you can put them as a `abcyzea
 
 If you would like to override the functionality of a plugin distributed with Oh My Zsh, create a plugin of the same name in the `custom/plugins/` directory and it will be loaded instead of the one in `plugins/`.
 
-## Getting Updates
-
-By default, you will be prompted to check for upgrades every few weeks. If you would like `oh-my-zsh` to automatically upgrade itself without prompting you, set the following in your `~/.zshrc`:
-
-`DISABLE_UPDATE_PROMPT=true`
-
-To disable automatic upgrades, set the following in your `~/.zshrc`:
-
-`DISABLE_AUTO_UPDATE=true`
-
 ### Manual Updates
 
 If you'd like to upgrade at any point in time (maybe someone just released a new plugin and you don't want to wait a week?)... you just need to run:
