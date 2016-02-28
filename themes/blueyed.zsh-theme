@@ -935,15 +935,15 @@ function get_x_focused_win_id() {
     xprop -root 2>/dev/null | sed -n '/^_NET_ACTIVE_WINDOW/ s/.* // p'
 }
 
-if [[ -z $SSH_CLIENT ]] && is_urxvt && [[ -n $DISPLAY ]] &&
-    [[ -n $WINDOWID ]] && [[ -z $TMUX ]]; then
+if [[ -z $SSH_CLIENT ]] && is_urxvt && [[ -n $DISPLAY ]] && [[ -n $WINDOWID ]]; then
     zmodload zsh/datetime  # for $EPOCHSECONDS
 
     _zsh_initial_display=$DISPLAY
 
     function set_my_confirm_client_kill() {
       # xprop -id $(get_x_focused_win_id) -f my_confirm_client_kill 8c
-      xprop -display $_zsh_initial_display -id $WINDOWID -f my_confirm_client_kill 32c \
+      xprop -display $_zsh_initial_display -id $WINDOWID \
+          -f my_confirm_client_kill 32c \
           -set my_confirm_client_kill $1 &!
     }
     function prompt_blueyed_confirmkill_preexec() {
@@ -954,6 +954,11 @@ if [[ -z $SSH_CLIENT ]] && is_urxvt && [[ -n $DISPLAY ]] &&
     }
     add-zsh-hook preexec prompt_blueyed_confirmkill_preexec
     add-zsh-hook precmd  prompt_blueyed_confirmkill_precmd
+
+    # Init for when used via "zsh -i -c ..." (attaching to tmux).
+    # NOTE: while tmux's term can be closed, it should be done by detaching instead,
+    # and it might cover other cased.
+    prompt_blueyed_confirmkill_preexec
 fi
 # }}}
 
