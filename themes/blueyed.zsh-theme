@@ -352,27 +352,21 @@ prompt_blueyed_precmd () {
     local user
     if [[ $UID == 0 ]]; then
         user="${roottext}%n"
-    elif (( $remote )); then
+    elif (( remote || UID != 1000 )); then
         if [[ $UID == 1000 ]]; then
             user="%{${fg_no_bold[green]}%}%n"
         else
             user="%(#.$roottext.$normtext)%n"
         fi
     fi
-
     local host
     if (( $remote )); then  # Remote (SSH) or OpenVZ?
         host="%{${fg_no_bold[$(color_for_host)]}%}%m"
+    elif [[ $TTY == /dev/tty* ]]; then
+        host="${hitext}${TTY#/dev/}"
     fi
-
     local userathost=$user
-    if [[ -n $user ]]; then
-        if [[ -z $http_proxy ]]; then
-            userathost+="${hitext}@"
-        elif [[ -n $host ]]; then
-            userathost+="${normtext}@"
-        fi
-    fi
+    [[ -n $user ]] && userathost+="${normtext}@"
     userathost+=$host
 
 
