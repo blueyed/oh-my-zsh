@@ -431,6 +431,7 @@ gsmav() {
 }
 gsmrm() {
   # Remove a git submodule
+  setopt localoptions errreturn
   [ x$1 = x ] && { echo "Remove which submodule?"; return 1;}
   [ -d "$1" ] || { echo "Submodule $1 not found."; return 2;}
   [ -f .gitmodules ] || { echo ".gitmodules not found."; return 3;}
