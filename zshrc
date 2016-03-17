@@ -682,6 +682,12 @@ viag() {
   vi -c "Ag $*"
 }
 
+vis() {
+  # Open a session in vim.
+  local session=$1; shift
+  vi -c "SessionOpen $session" "$@"
+}
+compdef "compadd ~/.config/vim/sessions/*.vim(:t:r)" vis
 
 # OpenVZ container: change to previous directory (via dirstack plugin) {{{1
 if [[ -r /proc/user_beancounters ]] && [[ ! -d /proc/bc ]] && (( $plugins[(I)dirstack] )) && (( $#dirstack )); then
