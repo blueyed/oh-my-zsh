@@ -277,14 +277,14 @@ compdef _docker docker-shell=_docker_containers
 # NOTE: "AcceptEnv" is empty by default, useful: "LANG LC_*"
 if (( $+COLORTERM )) && ! (( $+LC_MY_SSH_COLORTERM )); then
   export LC_MY_SSH_COLORTERM=$COLORTERM
-elif [[ -n $SSH_CLIENT ]]; then
+elif is_remote; then
   if ! (( $+COLORTERM )) && [[ -n $LC_MY_SSH_COLORTERM ]]; then
     export COLORTERM=$LC_MY_SSH_COLORTERM
   fi
 fi
 
 # Assume 256 colors with xterm/screen when $DISPLAY or $COLORTERM is given.
-if [[ -n $DISPLAY ]] || [[ -n $COLORTERM ]] || [[ -n $SSH_CLIENT ]]; then
+if [[ -n $DISPLAY ]] || [[ -n $COLORTERM ]] || is_remote; then
   if [[ $TERM == "xterm" ]]; then
     export TERM=xterm-256color
   elif [[ $TERM == "screen" ]]; then

@@ -909,7 +909,7 @@ function get_x_focused_win_id() {
     xprop -root 2>/dev/null | sed -n '/^_NET_ACTIVE_WINDOW/ s/.* // p'
 }
 
-if [[ -z $SSH_CLIENT ]] && is_urxvt && [[ -n $DISPLAY ]] && [[ -n $WINDOWID ]]; then
+if [[ -n $DISPLAY ]] && [[ -n $WINDOWID ]] && is_urxvt && ! is_remote; then
     zmodload zsh/datetime  # for $EPOCHSECONDS
 
     _zsh_initial_display=$DISPLAY
