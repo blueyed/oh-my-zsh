@@ -47,26 +47,6 @@ VIRTUAL_ENV_DISABLE_PROMPT=1
 
 PR_RESET="%{${reset_color}%}"
 
-# SSH conection?
-is_ssh() {
-    (( $+SSH_CLIENT )) && return
-    if ! (( $+_ZSH_IS_SSH )); then
-        # "who am i" displays current user from utmp(5).  This will be empty
-        # in most cases, e.g. with rxvt-unicode in an X session.
-        # With Konsole, it is ":0" for display :0, for ssh it is the hostname
-        # and with tmux sth like "tmux(PID).ID".
-        # NOTE: not available on diskstation (busybox 1.16.1).
-        local host=${${:-"$(who am i 2>/dev/null)"}#*\(*}
-        [[ -n $host && $host != tmux* && $host != :* ]]
-        _ZSH_IS_SSH=$?
-    fi
-    return $_ZSH_IS_SSH
-}
-# Remote system?
-is_remote() {
-    is_ssh || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]
-}
-
 # Remove any ANSI color codes (via www.commandlinefu.com/commands/view/3584/)
 _strip_escape_codes() {
     [[ -n $commands[gsed] ]] && sed=gsed || sed=sed # gsed with coreutils on MacOS

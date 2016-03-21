@@ -20,7 +20,7 @@ function _title {
   # echo "title:1:$1" ; echo "title:2:$2"
 
   # Append user@host if on ssh.
-  if [[ -n $SSH_CLIENT ]] && ! (($+TMUX)); then
+  if ! (($+TMUX)) && is_remote; then
     # Export it (useful in Vim's titlestring).
     export _TERM_TITLE_SUFFIX=" (${(%):-%n@%m})"
     2+=$_TERM_TITLE_SUFFIX
