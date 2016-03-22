@@ -1,0 +1,2 @@
+# Remote system?
+is_ssh || [[ -e /proc/user_beancounters && ! -d /proc/bc ]]
