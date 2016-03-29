@@ -179,7 +179,7 @@ alias gca='git commit -v -a'
 alias gcf='git commit --fixup'
 alias gcs='git commit --squash'
 gcl() {
-  git clone --recursive $@ || return
+  git clone $@ || return
 
   # Test if last arg is available as dir.
   local last=$@[$#]
@@ -412,7 +412,7 @@ gsma() {
   summary=$($_git_cmd submodule summary "$smpath") && \
   summary=( ${(f)summary} ) && \
   $_git_cmd commit -m "Add submodule $smpath @${${${(ps: :)summary[1]}[3]}/*.../}"$'\n\n'"${(F)summary}" "$smpath" $gitroot/.gitmodules && \
-  $_git_cmd submodule update --init --recursive "$smpath"
+  $_git_cmd submodule update --init "$smpath"
 }
 # `gsma` for ~df/vim/bundles:
 # Use basename from $1 without typical prefixes (vim-) and suffix (.git, .vim
