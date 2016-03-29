@@ -272,6 +272,9 @@ fi
 # Completion for custom docker scripts.
 compdef _docker docker-shell=_docker_containers
 
+# Autoload all functions.
+autoload $ZSH/functions/[^_]*(:t)
+
 # Export COLORTERM as LC_MY_SSH_COLORTERM, to be passed on through ssh, via
 # SendEnv in ~/.ssh/config and LC_* whitelist on the server.
 # NOTE: "AcceptEnv" is empty by default, useful: "LANG LC_*"
@@ -423,9 +426,6 @@ compdef "_arguments '-u[user name]:user name:_users' '*::arguments: _normal'" su
 
 # connect to qemu system by default
 export VIRSH_DEFAULT_CONNECT_URI=qemu:///system
-
-# Autoload all functions.
-autoload $ZSH/functions/[^_]*(:t)
 
 
 # Display "^C" when aborting zle
