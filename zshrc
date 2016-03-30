@@ -60,6 +60,9 @@ if (( $+commands[fzf] )) && ! (( $+FZF_DEFAULT_OPTS )); then
   export FZF_DEFAULT_OPTS=--extended
 fi
 
+# Autoload all functions.  Needs to come before theme for is_ssh/is_remote.
+autoload $ZSH/functions/[^_]*(:t)
+
 source $ZSH/oh-my-zsh.sh
 
 # fzf. {{{
@@ -271,9 +274,6 @@ fi
 
 # Completion for custom docker scripts.
 compdef _docker docker-shell=_docker_containers
-
-# Autoload all functions.
-autoload $ZSH/functions/[^_]*(:t)
 
 # Export COLORTERM as LC_MY_SSH_COLORTERM, to be passed on through ssh, via
 # SendEnv in ~/.ssh/config and LC_* whitelist on the server.
