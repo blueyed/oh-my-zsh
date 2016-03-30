@@ -1,5 +1,5 @@
 # SSH conection?
-if (( $+SSH_CLIENT )); then
+if (( $+SSH_CONNECTION )); then
   return
 fi
 if ! (( $+_ZSH_IS_SSH )); then

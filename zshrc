@@ -407,7 +407,7 @@ sudosession() {
   echo -nE "/usr/bin/env HOME=$sudohome" > $tempfile
   # Keep special environment vars (like sudo's envkeep)
   # Experimental: keep original $PATH (required/useful to keep byobu from bootstrap-byobu in there)
-  for i in SSH_AUTH_SOCK SSH_CLIENT http_proxy https_proxy ftp_proxy no_proxy PATH; do
+  for i in SSH_AUTH_SOCK SSH_CONNECTION http_proxy https_proxy ftp_proxy no_proxy PATH; do
     echo -nE " $i='${(P)i}'" >> $tempfile
   done
   echo -nE " $SHELL" >> $tempfile

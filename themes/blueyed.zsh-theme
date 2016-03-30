@@ -80,7 +80,7 @@ is_gnome_terminal() {
     fi
     (( $+KONSOLE_PROFILE_NAME )) && return 1
     # Check /proc, but only on the local system.
-    if [[ -z $SSH_CLIENT ]]; then
+    if ! is_remote; then
         # Fallback to `ps` if /proc does not exist.
         local parentcmd
         if [[ -f /proc/$PPID/cmdline ]]; then
