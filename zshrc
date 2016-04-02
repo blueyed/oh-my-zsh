@@ -275,17 +275,6 @@ fi
 # Completion for custom docker scripts.
 compdef _docker docker-shell=_docker_containers
 
-# Export COLORTERM as LC_MY_SSH_COLORTERM, to be passed on through ssh, via
-# SendEnv in ~/.ssh/config and LC_* whitelist on the server.
-# NOTE: "AcceptEnv" is empty by default, useful: "LANG LC_*"
-if (( $+COLORTERM )) && ! (( $+LC_MY_SSH_COLORTERM )); then
-  export LC_MY_SSH_COLORTERM=$COLORTERM
-elif is_remote; then
-  if ! (( $+COLORTERM )) && [[ -n $LC_MY_SSH_COLORTERM ]]; then
-    export COLORTERM=$LC_MY_SSH_COLORTERM
-  fi
-fi
-
 # Assume 256 colors with xterm/screen when $DISPLAY or $COLORTERM is given.
 if [[ -n $DISPLAY ]] || [[ -n $COLORTERM ]] || is_remote; then
   if [[ $TERM == "xterm" ]]; then
