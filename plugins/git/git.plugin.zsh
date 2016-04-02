@@ -251,39 +251,13 @@ alias gcp='git cherry-pick'
 
 alias gd='git diff --submodule --patch-with-stat'
 alias gdc='git diff --cached --patch-with-stat'
-# `git diff` against upstream (usually origin/master)
-gdo() {
-  _git_against_upstream diff "$@"
-}
-compdef _git gdo=git-diff
-alias gdom='git diff origin/master'
-alias gdum='git diff upstream/master'
-# `git log` against upstream (usually origin/master)
-glo() {
-  local opt
-  [ x$1 = x ] && opt='--stat' || opt="$@"
-  _git_against_upstream log "$opt"
-}
-compdef _git glo=git-log
-_git_against_upstream() {
-  local cmd u
-  [ x$1 = x ] && { echo "Missing command."; return 1; }
-  # u=$(git for-each-ref --format='%(upstream:short)' $(git symbolic-ref -q HEAD))
-  # [ x$u = x ] && { echo "No upstream setup for tracking."; return 2; }
-  # cmd=(git $@ $u..HEAD)
+alias gdf='gd $(git merge-base --fork-point master)'
 
-  for u in '@{upstream}' origin/master; do
-    cmd=($_git_cmd $@ "$u..HEAD")
-    echo $cmd
-    $cmd
-    ret=$?
-    (( $ret == 0 )) && break
-  done
-  if [[ $ret == 128 ]]; then
-    echo "Branch list:"
-    $_git_cmd show-branch --list
-  fi
-}
+# `git diff` against upstream.
+alias gdu='gd @{u}..'
+alias gdom='gd origin/master..'
+alias gdum='gd upstream/master..'
+
 gdv() { $_git_cmd diff -w "$@" | view - }
 compdef _git gdv=git-diff
 alias gdt='git difftool'
@@ -294,11 +268,17 @@ alias gf='git fetch'
 alias gfa='git fetch --all --prune'
 alias gl='git l'
 # git log with patches.
-alias glp='gl -p'
+alias glp='git log -p --stat'
 # '-m --first-parent' shows diff for first parent.
 alias glpm='gl -p -m --first-parent'
 alias glg='git log --stat --max-count=5'
 alias glgg='git log --graph --max-count=5'
+
+# `git log` against upstream.
+alias glu='git log --stat @{u}...'
+alias glom='git log --stat origin/master..'
+alias glum='git log --stat upstream/master..'
+
 alias gls='git ls-files'
 alias glsu='git ls-files -o --exclude-standard'
 alias gm='git merge'
@@ -319,7 +299,9 @@ alias gpoat='git push origin --all && git push origin --tags'
 alias gr='git remote'
 
 # Rebase
-alias grbi='git rebase -i'
+alias grbi='git rebase -i --autostash'
+alias grbiom='grbi origin/master'
+alias grbium='grbi upstream/master'
 alias grbc='git rebase --continue'
 alias grba='git rebase --abort'
 
