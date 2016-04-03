@@ -294,9 +294,9 @@ gp() {
 }
 compdef _git gp=git-push
 alias gpl='git pull --ff-only'
-alias gpll='git pull'
 alias gpoat='git push origin --all && git push origin --tags'
-alias gr='git remote'
+# Pull (ff-only) with auto-stashing (requires git 2.6+, 2015-09-28).
+alias gup="git -c rebase.autoStash=true pull --rebase"
 
 # Rebase
 alias grbi='git rebase -i --autostash'
@@ -310,6 +310,7 @@ grh() {
 }
 compdef _git grh=git-reset
 
+alias gr='git remote'
 alias grv='git remote -v'
 
 # Will cd into the top of the current repository
