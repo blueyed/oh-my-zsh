@@ -350,7 +350,8 @@ gstp() {
     echo -n "Continue? "
     read -q || { echo; return }; echo
   fi
-  git stash pop $stash_ref
+  git stash pop -q $stash_ref
+  git status --untracked-files=no
 }
 compdef -e 'words=(git stash pop "${(@)words[2,-1]}"); ((CURRENT+=2)); _normal' gstp
 
