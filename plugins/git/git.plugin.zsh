@@ -246,7 +246,7 @@ gcobu() {
   git checkout --no-track -b $1 upstream/master
 }
 
-alias gcount='git shortlog -sn'
+alias gcount='git shortlog -s --numbered --email'
 alias gcp='git cherry-pick'
 
 alias gd='git diff --submodule --patch-with-stat'
@@ -266,13 +266,13 @@ alias gdtd='git difftool --dir-diff --tool=bc'
 
 alias gf='git fetch'
 alias gfa='git fetch --all --prune'
-alias gl='git l'
-# git log with patches.
-alias glp='git log -p --stat'
+
+alias gl='git log --abbrev-commit --decorate --submodule=log --pretty="format:%C(yellow)%h%C(red)%d%C(reset) %s %C(green)(%cr) %C(blue)<%an>"'
+alias glg='gl --graph'
+alias gls='gl --graph --stat'
+alias glp='gls -p --pretty=fuller'
 # '-m --first-parent' shows diff for first parent.
 alias glpm='gl -p -m --first-parent'
-alias glg='git log --stat --max-count=5'
-alias glgg='git log --graph --max-count=5'
 
 # `git log` against upstream.
 alias glu='git log --stat @{u}...'
