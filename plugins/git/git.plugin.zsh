@@ -452,17 +452,15 @@ gsmrm() {
 }
 
 gswitch() {
-  [ x$1 = x ] && { echo "Change to which branch?"; return 1;}
+  [[ -z $1 ]] && { echo "Change to which branch?"; return 1 }
   local output="$($_git_cmd checkout $1 2>&1)"
   echo $output
   if [[ $output == "error: Your local changes"* ]]; then
-    setopt localoptions xtrace
     $_git_cmd stash save \
       && $_git_cmd checkout $1 \
       && $_git_cmd stash pop
   fi
 }
-# compdef _git gswitch=_git_commits  # calls __git_commits
 compdef _git gswitch=git-checkout
 
 alias gg='git gui citool'
