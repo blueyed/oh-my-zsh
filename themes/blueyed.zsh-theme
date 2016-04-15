@@ -127,15 +127,16 @@ my_get_gitdir() {
 
 # Setup/manage MY_X_THEME_VARIANT.
 theme-variant() {
-    # setopt localoptions
-    if (( ${@[(I)-*]} )); then
-        # Call the script if there are any option arguments, e.g. '-q' or '-d'.
+    if (( ${@[(I)-q]} )); then
+        # Call the script for '-q'.
         ~/.dotfiles/usr/bin/sh-setup-x-theme "$@"
     else
         eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
     fi
 }
 compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme-variant
+# Setup/init X theme variant (shell only).
+eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme -s)"
 
 
 # Override builtin reset-prompt widget to call the precmd hook manually

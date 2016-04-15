@@ -63,7 +63,22 @@ fi
 # Autoload all functions.  Needs to come before theme for is_ssh/is_remote.
 autoload $ZSH/functions/[^_]*(:t)
 
+
+BASE16_SHELL_DIR=~/.dotfiles/lib/base16/base16-shell
+base16_theme() {
+  if [[ -n "$1" ]]; then
+    export BASE16_THEME=$1
+    echo "Loading $BASE16_THEME..."
+  elif [[ -z $BASE16_THEME ]]; then
+    export BASE16_THEME="solarized.${MY_X_THEME_VARIANT:-dark}"
+  fi
+  local base16_theme=$BASE16_SHELL_DIR/base16-$BASE16_THEME.sh
+  [[ -s $base16_theme ]] && source $base16_theme
+}
+
 source $ZSH/oh-my-zsh.sh
+
+compdef "compadd $BASE16_SHELL_DIR/*.sh(:t:r:s/base16-/)" base16_theme
 
 # fzf. {{{
 if (( $+commands[fzf] )) && [[ -f /etc/profile.d/fzf.zsh ]]; then
@@ -794,25 +809,6 @@ zsh_disable_highlighting() {
   ZSH_DISABLE_HIGHLIGHT=$v
   ZSH_HIGHLIGHT_MAXLENGTH=$(($v ? 0 : 300))
 }
-
-
-export BASE16_SHELL_DIR=~/.dotfiles/lib/base16/base16-shell
-base16_scheme() {
-  if [[ -n $1 ]]; then
-    export BASE16_THEME=$1
-    echo "Loading $BASE16_THEME..."
-  elif [[ -z $BASE16_THEME ]]; then
-    export BASE16_THEME="solarized.${MY_X_THEME_VARIANT:-dark}"
-  fi
-  local base16_scheme_file=$BASE16_SHELL_DIR/base16-$BASE16_THEME.sh
-  [[ -s $base16_scheme_file ]] && source $base16_scheme_file
-}
-# Setup theme (once).  Required for/with vim-in-term.
-if [[ $TERM != "linux" ]]; then
-  base16_scheme
-fi
-# completion for base16_scheme function
-compdef "compadd $BASE16_SHELL_DIR/*.sh(:t:r:s/base16-/)" base16_scheme
 
 
 # Zsh/Vim fg back-and-forth (I am using C-y in Vim, instead of C-z). {{{
