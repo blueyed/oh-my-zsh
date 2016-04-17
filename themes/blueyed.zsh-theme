@@ -163,6 +163,7 @@ setup_prompt_blueyed
 prompt_blueyed_precmd () {
     # Get exit status of command first.
     local -h save_exitstatus=$?
+    typeset -g _ZSH_LAST_EXIT_STATUS _ZSH_LAST_PWD
 
     if [[ $1 == "reset-prompt" ]]; then
         if [[ $PWD == $_ZSH_LAST_PWD ]]; then
@@ -181,7 +182,7 @@ prompt_blueyed_precmd () {
 
     # FYI: list of colors: cyan, white, yellow, magenta, black, blue, red, default, grey, green
     # See `colors-table` for a list.
-    local -h exitstatus=$_ZSH_LAST_EXIT_STATUS
+    local -h  exitstatus=$_ZSH_LAST_EXIT_STATUS
     local -h    normtext="%{$fg_no_bold[default]%}"
     local -h      hitext="%{$fg_bold[magenta]%}"
     local -h    venvtext="%{$fg_bold[magenta]%}"
@@ -315,7 +316,7 @@ prompt_blueyed_precmd () {
             colored+=(${color}${i:gs/%/%%/}${color_off})
             cur+='/'
         done
-        cwd=${(pj:/:)colored}
+        cwd=${(j:/:)colored}
     fi
 
     # Display repo and shortened revision as of vcs_info, if available.
@@ -451,12 +452,6 @@ prompt_blueyed_precmd () {
         fi
     fi
 
-    # # Shell level: display it if >= 1 (but substract tmux/tmuxifier levels).
-    # local disp_SHLVL=$((SHLVL - $+TMUX - ($+TMUXIFIER * 2)))
-    # if (( disp_SHLVL > 1 )); then
-    #     rprompt_extra+=("%fSHLVL:${disp_SHLVL}")
-    # fi
-
     if (( $+MC_SID )); then
         prompt_extra+=("$normtext(mc)")
     fi
@@ -549,6 +544,7 @@ ${prompt_vcs}${prompt_sign} ${PR_RESET}"
     if ! (( $+MC_SID )); then  # Skip for midnight commander: display issues.
         # Distribution (if on a remote system)
         if is_remote; then
+            typeset -g _ZSH_DISTRO
             [[ -z $_ZSH_DISTRO ]] && _ZSH_DISTRO="$(get_distro)"
             RPS1_list=("$distrotext${_ZSH_DISTRO}" $RPS1_list)
         fi
@@ -843,7 +839,7 @@ my-set-cursor-shape() {
             bar)             code='\e[6 q' ;;
             *) echo "my-set-cursor-shape: unknown arg: $1"; return 1 ;;
         esac
-    elif (( $+KONSOLE_PROFILE_NAME )); then
+    elif (( $+KONSOLE_DBUS_SESSION )); then
         case "$1" in
             block_blink)     code='\e]50;CursorShape=0;BlinkingCursorEnabled=1\x7' ;;
             block)           code='\e]50;CursorShape=0;BlinkingCursorEnabled=0\x7' ;;
@@ -871,7 +867,7 @@ compdef -e '_arguments "1: :(block_blink block underline_blink underline bar_bli
 
 # Vim mode indicator {{{1
 _zsh_vim_mode_indicator () {
-    if (( $_USE_XTERM_CURSOR_CODES )) || (( $+KONSOLE_PROFILE_NAME )); then
+    if (( $_USE_XTERM_CURSOR_CODES )) || (( $+KONSOLE_DBUS_SESSION )); then
         if [ $KEYMAP = vicmd ]; then
             _auto-my-set-cursor-shape block_blink
         else
@@ -914,19 +910,18 @@ function get_x_focused_win_id() {
 if [[ -n $DISPLAY ]] && [[ -n $WINDOWID ]] && is_urxvt && ! is_remote; then
     zmodload zsh/datetime  # for $EPOCHSECONDS
 
-    _zsh_initial_display=$DISPLAY
-
     function set_my_confirm_client_kill() {
-      # xprop -id $(get_x_focused_win_id) -f my_confirm_client_kill 8c
-      xprop -display $_zsh_initial_display -id $WINDOWID \
-          -f my_confirm_client_kill 32c \
-          -set my_confirm_client_kill $1 &!
+        if [[ -n "$WINDOWID" ]]; then
+            xprop -display $DISPLAY -id $WINDOWID \
+                -f my_confirm_client_kill 32c \
+                -set my_confirm_client_kill $1 &!
+        fi
     }
     function prompt_blueyed_confirmkill_preexec() {
-      set_my_confirm_client_kill 1
+        set_my_confirm_client_kill 1
     }
     function prompt_blueyed_confirmkill_precmd() {
-      set_my_confirm_client_kill $EPOCHSECONDS
+        set_my_confirm_client_kill $EPOCHSECONDS
     }
     add-zsh-hook preexec prompt_blueyed_confirmkill_preexec
     add-zsh-hook precmd  prompt_blueyed_confirmkill_precmd
@@ -973,15 +968,15 @@ _ZSH_VCS_INFO_CUR_VCS=
 _ZSH_VCS_INFO_FORCE_GETDATA=
 _ZSH_VCS_INFO_DIR_CHANGED=
 _ZSH_VCS_INFO_LAST_MTIME=
+_ZSH_VCS_INFO_PREV_PWD=
+_zsh_prompt_vcs_info=()
 
 zstyle ':vcs_info:*+start-up:*' hooks start-up
 +vi-start-up() {
     ret=1  # do not run by default.
-
     if [[ -n $_ZSH_VCS_INFO_FORCE_GETDATA ]]; then
         _ZSH_VCS_INFO_LAST_MTIME=
         ret=0
-
     elif [[ -n $_ZSH_VCS_INFO_DIR_CHANGED ]]; then
         ret=0
     fi
@@ -1121,7 +1116,7 @@ add-zsh-hook preexec _pyenv_version_preexec
 
 
 color_for_host() {
-    # FYI: list of colors: cyan, white, yellow, magenta, black, blue, red, default, grey, green
+    local colors
     colors=(cyan yellow magenta blue green)
 
     # NOTE: do not use `hostname -f`, which is slow with wacky network
@@ -1135,10 +1130,9 @@ hash_value_from_list() {
     if ! (( ${+functions[(r)sumcharvals]} )); then
       source =sumcharvals
     fi
-
-    value=$1
+    local list index
     list=(${(s: :)2})
-    index=$(( $(sumcharvals $value) % $#list + 1 ))
+    index=$(( $(sumcharvals $1) % $#list + 1 ))
     echo $list[$index]
 }
 
