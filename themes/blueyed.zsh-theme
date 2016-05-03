@@ -459,11 +459,19 @@ prompt_blueyed_precmd () {
     # exit status
     local -h disp
     if [[ $exitstatus -ne 0 ]] ; then
-        disp="es:$exitstatus"
-        if [ $exitstatus -gt 128 -a $exitstatus -lt 163 ] ; then
-            disp+=" (SIG$signals[$exitstatus-128])"
+        if (( $exitstatus == 148 )); then
+            disp="(bg)"
+        elif [[ $exitstatus == 141 ]]; then
+            # SIGPIPE
+        else
+            disp=" "
+            if (( exitstatus != 1 )); then
+                disp+=":$exitstatus"
+                if [ $exitstatus -gt 128 -a $exitstatus -lt 163 ] ; then
+                    disp+=":${signals[$exitstatus-127]}"
+                fi
+            fi
         fi
-        # TODO: might make this informative only (to the right) and use a different prompt sign color to indicate $? != 0
         prompt_extra+=("${exiterrtext}${disp}")
     fi
 
