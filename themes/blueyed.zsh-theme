@@ -625,10 +625,10 @@ function +vi-git-stash() {
             local short_time_unit=${top_stash_time[2][1]}
             if [[ $short_time_unit != s ]]; then
                 if [[ $short_time_unit == m && ${top_stash_time[2][2]} == o ]]; then
-                    # Handle "minutes" and "months".
-                    short_time_unit+=${top_stash_time[2][2]}
+                    # Handle "minutes" and "months": use "mo" for months.
+                    short_time_unit=mo
                 fi
-                hook_com[misc]+="$normtext(${top_stash_time[1]}$short_time_unit)"
+                hook_com[misc]+="$normtext:${top_stash_time[1]}$short_time_unit"
             fi
 
             # Display IDs of fitting stashes, if top stash is not for HEAD.
@@ -638,11 +638,17 @@ function +vi-git-stash() {
                 for i in {1..$#stashes}; do
                     stash_branch="${${${${(f)stashes[$i]}[1]}#(WIP\ on|On)\ }%%:*}"
                     if [[ $stash_branch == $hook_com[branch] ]]; then
+                        if (( $#fitting > 2 )); then
+                            fitting+=("…")
+                            break
+                        fi
                         fitting+=("${${${${(f)stashes[$i]}[3]}#stash@\{}%\}}")
                     fi
                 done
                 if (( $#fitting )); then
-                    hook_com[misc]+=",fit:${(j:,:)fitting}"
+                    hook_com[misc]+=":${${(j:,:)fitting}:gs/,…/…}"
+                else
+                    hook_com[misc]+=":-"
                 fi
             fi
         fi
