@@ -9,7 +9,28 @@ is42(){
 }
 
 DIRSTACKSIZE=${DIRSTACKSIZE:-50}
-DIRSTACKFILE=${DIRSTACKFILE:-${HOME}/.zdirs}
+if [ -z "$DIRSTACKFILE" ]; then
+    dirstack_old=${HOME}/.zdirs
+    DIRSTACKFILE=${HOME}/.local/share/zdirs
+
+    # Move from old location to new (default) one.
+    if [ -f "$dirstack_old" ] && ! [ -f "$DIRSTACKFILE" ]; then
+        echo "Moving $dirstack_old to $DIRSTACKFILE." >&2
+        mv -i "$dirstack_old" "$DIRSTACKFILE"
+        ln -i -s "$DIRSTACKFILE" "$dirstack_old"
+    fi
+
+    # Use a separate stack per named tmux or X profile.
+    if [ -n "$TMUX" ]; then
+        tmux_session_name="$(tmux display-message -p '#S')"
+        if [[ -n $tmux_session_name ]] \
+                && [[ -e "${DIRSTACKFILE}.$tmux_session_name" ]]; then
+            DIRSTACKFILE+=".$tmux_session_name"
+        fi
+    elif [[ -n "$MY_X_SESSION_NAME" ]]; then
+        DIRSTACKFILE+=".$MY_X_SESSION_NAME"
+    fi
+fi
 
 if [[ -f ${DIRSTACKFILE} ]] && [[ ${#dirstack[*]} -eq 0 ]] ; then
     dirstack=( ${(f)"$(< $DIRSTACKFILE)"} )
@@ -32,6 +53,8 @@ fi
 autoload -U add-zsh-hook
 add-zsh-hook chpwd _zsh_dirstack_chpwd_hook
 _zsh_dirstack_chpwd_hook() {
+    (( ZSH_SUBSHELL )) && return
+    [[ -z "$DIRSTACKFILE" ]] && return
     local -ax my_stack
     my_stack=( ${PWD} ${dirstack} )
     if is42 ; then
