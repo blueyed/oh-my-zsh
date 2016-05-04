@@ -777,14 +777,19 @@ if [[ $SSH_AUTH_SOCK == $GNUPGHOME/* ]]; then
   gpg-connect-agent UPDATESTARTUPTTY /bye >/dev/null
 fi
 
-# Source zsh-syntax-highlighting when not in Vim's shell
+# Source zsh-syntax-highlighting when not in Vim's shell.
 if [[ -z $VIM ]]; then
-  # https://github.com/zsh-users/zsh-syntax-highlighting#readme
   # NOTE: not 'cursor', which defaults to 'standout' and messes with vicmd mode.
   ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
-  #ZSH_HIGHLIGHT_HIGHLIGHTERS+=(root)
-  # XXX: slow?!
-  source ~/.dotfiles/lib/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+  () {
+    local f
+    for f in /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+        ~/.dotfiles/lib/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; do
+      if [[ -f $f ]]; then
+        source $f; break
+      fi
+    done
+  }
 fi
 
 
