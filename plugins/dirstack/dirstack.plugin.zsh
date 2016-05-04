@@ -3,11 +3,6 @@
 # dirstack handling from grml's zshrc
 # (http://git.grml.org/?p=grml-etc-core.git;a=blob_plain;f=etc/zsh/zshrc;hb=HEAD)
 
-is42(){
-    [[ $ZSH_VERSION == 4.<2->* || $ZSH_VERSION == <5->* ]] && return 0
-    return 1
-}
-
 DIRSTACKSIZE=${DIRSTACKSIZE:-50}
 if [ -z "$DIRSTACKFILE" ]; then
     dirstack_old=${HOME}/.zdirs
@@ -54,12 +49,8 @@ autoload -U add-zsh-hook
 add-zsh-hook chpwd _zsh_dirstack_chpwd_hook
 _zsh_dirstack_chpwd_hook() {
     (( ZSH_SUBSHELL )) && return
-    [[ -z "$DIRSTACKFILE" ]] && return
+    [[ -z $DIRSTACKFILE ]] && return
     local -ax my_stack
-    my_stack=( ${PWD} ${dirstack} )
-    if is42 ; then
-        builtin print -l ${(u)my_stack} >! ${DIRSTACKFILE}
-    else
-        uprint my_stack >! ${DIRSTACKFILE}
-    fi
+    my_stack=( $PWD $dirstack )
+    builtin print -l ${(u)my_stack} >! $DIRSTACKFILE
 }
