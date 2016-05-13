@@ -9,16 +9,39 @@ alias please='sudo'
 
 # ps + grep.
 psgrep() {
-  local i pids
-  pids=$(pgrep -f $@)
+  local i pids line
   # Add numeric args as pids.
-  for i do; if [[ $i =~ '^[[:digit:]]+$' ]]; then
-    pids=($i $pids)
-  fi; done
-  if [[ -z $pids ]]; then
-    echo "No processes found." >&2; return 1
+  typeset -a args patterns
+  for i do
+    if [[ $i == <-> ]]; then
+      pids=($i $pids)
+      patterns+=($i)
+    else
+      args+=($i)
+    fi
+    shift
+  done
+  if (( $#args == 1 )); then
+    pids+=($(pgrep -f $i))
+    patterns+=($i)
+  else
+    for i in $args; do
+      if ! [[ $i == -* ]]; then
+        patterns+=($i)
+      fi
+    done
   fi
-  ps up ${=pids}
+  if [[ -z $pids ]]; then
+    echo "No processes found." >&2
+    return 1
+  fi
+  output=(${(f):-"$(ps -fp ${=pids})"})
+  if [[ -t 1 ]]; then
+    colored=$(echo ${(F)output} | \grep --color=always ${^:--e"$patterns"} -e '^')
+    echo "$colored" | LESS= less -S -R -X --quit-if-one-screen
+  else
+    ps -fp $pids
+  fi
 }
 
 # Show history
