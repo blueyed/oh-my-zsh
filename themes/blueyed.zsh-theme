@@ -45,7 +45,7 @@ zstyle -s ":vcs_info:git:*:-all-" "command" _git_cmd || _git_cmd=$(whence -p git
 # This causes a glitch with `pyenv shell venv_name` when it gets activated.
 VIRTUAL_ENV_DISABLE_PROMPT=1
 
-PR_RESET="%{${reset_color}%}"
+PR_RESET="%{${reset_color}%f%b%}"
 
 # Remove any ANSI color codes (via www.commandlinefu.com/commands/view/3584/)
 _strip_escape_codes() {
@@ -125,20 +125,6 @@ my_get_gitdir() {
     echo $gitdir
 }
 
-# Setup/manage MY_X_THEME_VARIANT.
-theme-variant() {
-    if (( ${@[(I)-q]} )); then
-        # Call the script for '-q'.
-        ~/.dotfiles/usr/bin/sh-setup-x-theme "$@"
-    else
-        eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
-    fi
-}
-compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme-variant
-# Setup/init X theme variant (shell only).
-eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme -s)"
-
-
 # Override builtin reset-prompt widget to call the precmd hook manually
 # (for fzf's fzf-cd-widget). This is needed in case the pwd changed.
 # TODO: move cwd related things from prompt_blueyed_precmd into a chpwd hook?!
@@ -202,10 +188,18 @@ prompt_blueyed_precmd () {
     local -h     rprompt="$normtext"
     local -h   rprompthl="%{$fg_bold[default]%}"
     local -h  prompttext="%{$fg_no_bold[green]%}"
-    if [[ $MY_X_THEME_VARIANT == "light" ]]; then
-        local -h   dimmedtext="%{$fg_no_bold[white]%}"
+    if [[ $BASE16_THEME == solarized.* ]]; then
+        if [[ $MY_X_THEME_VARIANT == "light" ]]; then
+            local -h   dimmedtext="%{%b%F{20}%}"
+        else
+            local -h   dimmedtext="%{%b%F{19}%}"
+        fi
     else
-        local -h   dimmedtext="%{$fg_no_bold[black]%}"
+        if [[ $MY_X_THEME_VARIANT == "light" ]]; then
+            local -h   dimmedtext="%{$fg_no_bold[white]%}"
+        else
+            local -h   dimmedtext="%{$fg_no_bold[black]%}"
+        fi
     fi
     local -h bracket_open="${dimmedtext}["
     local -h bracket_close="${dimmedtext}]"

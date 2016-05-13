@@ -4,6 +4,47 @@
 #
 # NOTE: $path adjustment is done in .zshenv
 
+# Setup/manage MY_X_THEME_VARIANT.
+# Do this as early as possible, because it needs to change tmux window options.
+BASE16_SHELL_DIR=~/.dotfiles/lib/base16/base16-shell
+base16_theme() {
+  local theme
+  if [[ -n "$1" ]]; then
+    theme=$1
+    # echo "Loading base16 theme: $BASE16_THEME..." >&2
+  elif [[ -z $theme ]]; then
+    theme="solarized.${MY_X_THEME_VARIANT:-dark}"
+  fi
+  local theme_file=$BASE16_SHELL_DIR/base16-$theme.sh
+  if ! [[ -s $theme_file ]]; then
+    echo "$theme_file does not exist." >&2
+    return 1
+  fi
+  local tmux
+  if [[ -n "$TMUX" ]]; then
+    if [[ "$TTY" != "$(tmux display -p '#{pane_tty}')" ]]; then
+      tmux=
+    else
+      tmux="$TMUX"
+    fi
+  fi
+  TMUX="$tmux" source $theme_file
+  export BASE16_THEME=$theme
+}
+theme-variant() {
+    if (( ${@[(I)-q]} )); then
+        # Call the script for '-q'.
+        ~/.dotfiles/usr/bin/sh-setup-x-theme "$@"
+    else
+        eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
+        # local cmds="$(~/.dotfiles/usr/bin/sh-setup-x-theme "$@")"
+        # # echo "$cmds"
+        # eval "$cmds"
+    fi
+}
+# Setup/init X theme variant (shell only).
+eval "$(~/.dotfiles/usr/bin/sh-setup-x-theme -s)"
+
 # Path to your oh-my-zsh configuration.
 export ZSH=$HOME/.dotfiles/oh-my-zsh
 
@@ -63,22 +104,10 @@ fi
 # Autoload all functions.  Needs to come before theme for is_ssh/is_remote.
 autoload $ZSH/functions/[^_]*(:t)
 
-
-BASE16_SHELL_DIR=~/.dotfiles/lib/base16/base16-shell
-base16_theme() {
-  if [[ -n "$1" ]]; then
-    export BASE16_THEME=$1
-    echo "Loading $BASE16_THEME..."
-  elif [[ -z $BASE16_THEME ]]; then
-    export BASE16_THEME="solarized.${MY_X_THEME_VARIANT:-dark}"
-  fi
-  local base16_theme=$BASE16_SHELL_DIR/base16-$BASE16_THEME.sh
-  [[ -s $base16_theme ]] && source $base16_theme
-}
-
 source $ZSH/oh-my-zsh.sh
 
 compdef "compadd $BASE16_SHELL_DIR/*.sh(:t:r:s/base16-/)" base16_theme
+compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme-variant
 
 # fzf. {{{
 if (( $+commands[fzf] )) && [[ -f /etc/profile.d/fzf.zsh ]]; then
