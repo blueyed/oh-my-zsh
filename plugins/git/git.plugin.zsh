@@ -279,8 +279,8 @@ alias glu='git log --stat @{u}...'
 alias glom='git log --stat origin/master..'
 alias glum='git log --stat upstream/master..'
 
-alias gls='git ls-files'
 alias glsu='git ls-files -o --exclude-standard'
+
 alias gm='git merge'
 alias gmt='git mergetool --no-prompt'
 gp() {
