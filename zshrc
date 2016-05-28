@@ -801,7 +801,7 @@ minimalprompt() {
 }
 
 # Update tty information for gpg-agent.
-if [[ $SSH_AUTH_SOCK == $GNUPGHOME/* ]]; then
+if [[ ${(t)GPG_TTY} == *-export ]]; then
   export GPG_TTY=$(tty)
   gpg-connect-agent UPDATESTARTUPTTY /bye >/dev/null
 fi
