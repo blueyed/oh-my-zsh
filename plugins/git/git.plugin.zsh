@@ -246,6 +246,29 @@ gcobu() {
   git checkout --no-track -b $1 upstream/master
 }
 
+# Checkout a pull request (via refs on Github).
+gf_upstream() {
+  for i in upstream origin; do
+    if $_git_cmd config "remote.$i.url" >/dev/null; then
+      echo $i
+      return
+    fi
+  done
+  echo 'gf_upstream: no remote found!' >&2
+  return 1
+}
+gfpr() {
+  local remote
+  remote=${2-$(gf_upstream)} || return
+  git fetch -f $remote pull/$1/head:remotes/$remote/pr/$1
+}
+gcopr() {
+  local pr=${1:t}
+  local remote
+  remote=${2-$(gf_upstream)} || return
+  gfpr "$pr" "$remote" && git checkout remotes/$remote/pr/$pr
+}
+
 alias gcount='git shortlog -s --numbered --email'
 alias gcp='git cherry-pick'
 
