@@ -599,7 +599,7 @@ ggpush() {
 compdef _git ggpush=git-push
 
 ggpushb() {
-  ggpush "$@" && git browse
+  ggpush "$@" && hub browse
 }
 compdef _git ggpushb=git-push
 
