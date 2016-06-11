@@ -1,39 +1,3 @@
-# Setup hub function for git, if it is available; http://github.com/defunkt/hub
-if [[ -n "$commands[(I)hub2]" ]]; then
-    _hub_command=hub2
-elif [[ -n "$commands[(I)hub]" ]] && [[ -n "$commands[(I)ruby]" ]]; then
-    _hub_command=hub
-fi
-
-if [[ -n $_hub_command ]]; then
-    eval 'function git(){
-        if ! (( $+_has_working_hub  )); then
-            '$_hub_command' --version &> /dev/null
-            _has_working_hub=$(($? == 0))
-        fi
-        if (( $_has_working_hub )) ; then
-            '$_hub_command' "$@"
-        else
-            command git "$@"
-        fi
-        local ret=$?
-        # Force vcs_info to be run.
-        _ZSH_VCS_INFO_FORCE_GETDATA=1
-        return $ret
-    }'
-    unset _hub_command
-
-    # Use the git command for vcs_info, instead of hub!
-    zstyle ':vcs_info:git:*:-all-' command $(whence -p git)
-
-    # Use hub's compdef for git.
-    if whence _hub >/dev/null; then
-        compdef _hub git
-    else
-        echo "NOTE: _hub not available for compdef!" >&2
-    fi
-fi
-
 # Functions #################################################################
 
 # https://github.com/dbb 
