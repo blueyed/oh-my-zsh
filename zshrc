@@ -85,10 +85,6 @@ export DISABLE_AUTO_UPDATE="true"
 # NOTE: pip used from zsh-completions, but has no support for packages (https://github.com/zsh-users/zsh-completions/issues/194)
 plugins=(git dirstack apt)
 
-if [[ ${HOST%%.*} == lenny ]]; then
-  plugins+=(github grunt)
-fi
-
 # grunt-zsh-completion
 zstyle ':completion::complete:grunt::options:' show_grunt_path yes
 
