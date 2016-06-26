@@ -106,11 +106,17 @@ compdef "compadd $BASE16_SHELL_DIR/*.sh(:t:r:s/base16-/)" base16_theme
 compdef -e '_arguments "1: :(auto light dark)" "2: :(save)"' theme-variant
 
 # fzf. {{{
-if (( $+commands[fzf] )) && [[ -f /etc/profile.d/fzf.zsh ]]; then
-  # NOTE: binds ^R, which gets overridden below, and I'll use F3 instead.
-  source /etc/profile.d/fzf.zsh
-  [[ -n $terminfo[kf3] ]] && bindkey $terminfo[kf3] fzf-history-widget
-fi  # }}}
+if (( $+commands[fzf] )); then
+  source ~/.config/fzf.zsh
+else
+  if [[ -x ~/.dotfiles/lib/fzf/bin/fzf ]]; then
+    path+=(~/.dotfiles/lib/fzf/bin)
+    source ~/.config/fzf.zsh
+  else
+    echo "fzf does not exist.  To install it: '~/.dotfiles/lib/fzf/install --bin'." >&2
+  fi
+fi # }}}
+
 # Customize to your needs...
 
 REPORTTIME=10 # print elapsed time when more than 10 seconds
