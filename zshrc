@@ -889,13 +889,18 @@ stty -ixon 2>/dev/null
 AUTOENV_FILE_LEAVE=.autoenv.zsh
 source ~/.dotfiles/lib/zsh-autoenv/autoenv.zsh
 
-_warn_old_env() {
-  if [[ -f $PWD/.env ]]; then
-    echo "WARN: found .env file. Should be .autoenv.zsh probably!" >&2
+# Lazily setup pyenv, if there's a .python-version file in the current dir.
+_pyenv_lazy_load() {
+  if (( $+functions[zsh_setup_pyenv] )); then
+    if [[ -f $PWD/.python-version ]]; then
+      zsh_setup_pyenv
+    else
+      return
+    fi
   fi
+  add-zsh-hook -d chpwd _pyenv_lazy_load
 }
-add-zsh-hook chpwd _warn_old_env
-
+add-zsh-hook chpwd _pyenv_lazy_load
 
 # Verbose completion.
 # Source: http://www.linux-mag.com/id/1106/

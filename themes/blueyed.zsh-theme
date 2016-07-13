@@ -361,10 +361,10 @@ prompt_blueyed_precmd () {
 
     _get_pyenv_version() {
         if ! (( $+_zsh_cache_pwd[pyenv_version] )); then
-            # Call _pyenv_setup, if it's still defined (not being called yet).
-            # This avoids calling it for both subshells below.
-            if (( $+functions[_pyenv_setup] )); then
-                _pyenv_setup
+            # Call zsh_setup_pyenv, if it's still defined (not being called
+            # yet).  This avoids calling it for both subshells below.
+            if (( $+functions[zsh_setup_pyenv] )); then
+                zsh_setup_pyenv
             fi
             _zsh_cache_pwd[pyenv_version]=$(pyenv version-name 2>/dev/null)
             _zsh_cache_pwd[pyenv_global]=${(pj+:+)${(f)"$(pyenv global 2>/dev/null)"}}
@@ -372,24 +372,34 @@ prompt_blueyed_precmd () {
     }
 
     # virtualenv
+    # TODO: needs to be run on chpwd for "pyenv local", too.
+    local venv_found
     if [[ -n $VIRTUAL_ENV ]]; then
-        if ! (( $path[(I)$VIRTUAL_ENV/bin] )); then
-            # VIRTUAL_ENV not in $PATH, might be from pyenv.
-            _get_pyenv_version
-            local v venv_found
-            for v in ${(s~:~)_zsh_cache_pwd[pyenv_version]}; do
-                if [[ ${VIRTUAL_ENV##*/} == $v ]]; then
-                    prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/})")  # ⓔ
-                    venv_found=1
-                    break
+        if [[ -d $VIRTUAL_ENV ]]; then
+            if ! (( $path[(I)$VIRTUAL_ENV/bin] )); then
+                # VIRTUAL_ENV not in $PATH (but exists), might be from pyenv.
+                _get_pyenv_version
+                local v
+                for v in ${(s~:~)_zsh_cache_pwd[pyenv_version]}; do
+                    if [[ ${VIRTUAL_ENV##*/} == $v ]]; then
+                        prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/})")  # ⓔ
+                        venv_found=1
+                        break
+                    fi
+                done
+                if [[ -z $venv_found ]]; then
+                    # VIRTUAL_ENV set, but not in path and not pyenv's name: add a note.
+                    prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/}(NOT_IN_PATH))")
                 fi
-            done
-            if [[ -z $venv_found ]]; then
-                # VIRTUAL_ENV set, but not in path and not pyenv's name: add a note.
-                prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/}(NOT_IN_PATH))")
+            else
+                local venv=${VIRTUAL_ENV##*/}
+                if [[ ${${VIRTUAL_ENV%/*}##*/} == .tox ]]; then
+                    venv="tox:$venv"
+                fi
+                prompt_extra+=("${venvtext}($venv)")
             fi
         else
-            prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/})")
+            prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/}(MISSING))")
         fi
     fi
 
@@ -397,7 +407,7 @@ prompt_blueyed_precmd () {
     if [[ ${(t)PYENV_VERSION} == *-export* ]]; then
         pyenv_version=${PYENV_VERSION}
     else
-        if ! (( $_ZSH_PYENV_SETUP )); then
+        if (( $+functions[zsh_setup_pyenv] )); then
             # Skip calling pyenv, if it hasn't been used already.
             pyenv_version=?
         else
@@ -407,8 +417,10 @@ prompt_blueyed_precmd () {
     fi
     local pyenv_prompt
     if [[ $pyenv_version != ${_zsh_cache_pwd[pyenv_global]} ]]; then
-        if [[ ${VIRTUAL_ENV##*/} == $pyenv_version ]]; then
+        if (( $venv_found )) && [[ ${VIRTUAL_ENV##*/} == $pyenv_version ]]; then
             pyenv_version=✓
+        elif [[ -z $pyenv_version ]]; then
+            pyenv_version=☓
         fi
         pyenv_prompt=("${normtext}🐍 ${pyenv_version}")
         RPS1_list+=($pyenv_prompt)

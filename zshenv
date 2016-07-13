@@ -60,18 +60,22 @@ export GPGKEY='3FE63E00'
 # Setup pyenv (with completion for zsh).
 # It gets done also in ~/.profile, but that does not cover completion and
 # ~/.profile is not sourced for real virtual consoles (VTs).
-if [[ -d ~/.pyenv ]] && ! (( $+functions[_pyenv_setup] )); then # only once!
-  export PYENV_ROOT="$HOME/.pyenv"
+if [[ -d ~/.pyenv ]] && ! (( $+functions[zsh_setup_pyenv] )); then # only once!
+  if ! (( $+PYENV_ROOT )); then
+    export PYENV_ROOT="$HOME/.pyenv"
+  fi
+  # TODO: Prepend paths always?! (https://github.com/yyuu/pyenv/issues/492).
+  #       Would allow for using PYENV_VERSION in (Zsh) scripts always.
+  #       But already done in ~/.profile?!
   prepend_path_if_not_in_already $PYENV_ROOT/bin
   prepend_path_if_not_in_already $PYENV_ROOT/shims
 
   # Setup pyenv completions always.
-  # (it is useful to have from the beginning, and using it via _pyenv_setup
+  # (it is useful to have from the beginning, and using it via zsh_setup_pyenv
   # triggers a job control bug in Zsh).
   source $PYENV_ROOT/completions/pyenv.zsh
 
-  _ZSH_PYENV_SETUP=0  # used in prompt.
-  _pyenv_setup() {
+  zsh_setup_pyenv() {
     # Manual pyenv init, without "source", which triggers a bug in zsh.
     # Adding shims to $PATH etc has been already also.
     # eval "$(command pyenv init - --no-rehash | grep -v '^source')"
@@ -90,15 +94,12 @@ if [[ -d ~/.pyenv ]] && ! (( $+functions[_pyenv_setup] )); then # only once!
           command pyenv "$command" "$@";;
       esac
     }
-
-    eval "$(pyenv virtualenv-init -)"
-
-    _ZSH_PYENV_SETUP=1
-    unfunction _pyenv_setup
+    export PYENV_VIRTUALENV_DISABLE_PROMPT=1
+    unfunction zsh_setup_pyenv
   }
   pyenv() {
-    if [ -n "$commands[pyenv]" ] ; then
-      _pyenv_setup
+    if [[ -n ${commands[pyenv]} ]]; then
+      zsh_setup_pyenv
       pyenv "$@"
     fi
   }
