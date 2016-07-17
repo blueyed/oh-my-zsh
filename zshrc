@@ -966,6 +966,34 @@ if ! (( $+ZSH_NO_CD_DASH )) && ! [[ -o login ]] && ! (( $+TMUX )); then
   [[ -d $OLDPWD ]] && cd $OLDPWD
 fi
 
+# Arch Linux / pacman.
+if (( $+commands[pacman] )); then
+  () {
+    local cmd sudocmd
+    if (( $+commands[pacaur] )); then
+      cmd=pacaur
+      sudocmd=(pacaur)
+    else
+      cmd=pacman
+      sudocmd=(sudo pacman)
+    fi
+
+    alias pm=$sudocmd
+    alias pmQ="$cmd -Q"
+    alias pmQi="$cmd -Qi"
+    alias pmQl="$cmd -Ql"
+    alias pmQo="$cmd -Qo"
+    alias pmRs="$cmd -Rs"
+    eval "pmS() {$sudocmd -S \"\$@\" && rehash}"
+    compdef -e "words=($sudocmd -S \"\${(@)words[2,-1]}\"); ((CURRENT+=$(($#sudocmd)))); _normal" pmS
+    alias pmSi="$cmd -Qi"
+    # search.
+    alias pms="$cmd -Ss"
+
+    alias pmup="pmS -yu --devel --needed"
+  }
+fi
+
 # zsh_stop_debug_xtrace
 
 true # return code 0
