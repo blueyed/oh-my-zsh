@@ -953,6 +953,11 @@ export DEBEMAIL='ubuntu@thequod.de'
 
 
 reloadzsh() {
+  # Delete widgets to avoid recursion error via zsh-syntax-highlighting.
+  zle -D zle-keymap-select
+  zle -D zle-line-finish
+  zle -D zle-line-init
+
   source ~/.zshenv
   ZSHRC_EXEC_COMMAND= source ~/.zshrc
 }

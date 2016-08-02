@@ -914,8 +914,8 @@ _zsh_vim_mode_indicator () {
         my-reset-prompt
     fi
 }
-eval "zle-keymap-select () { $functions[_zsh_vim_mode_indicator]; $functions[zle-keymap-select]; }"
-eval "zle-line-init     () { $functions[_zsh_vim_mode_indicator]; $functions[zle-line-init]; }"
+eval "zle-keymap-select () { $functions[_zsh_vim_mode_indicator]; $functions[${widgets[zle-keymap-select]#*:}] }"
+eval "zle-line-init     () { $functions[_zsh_vim_mode_indicator]; $functions[${widgets[zle-line-init]#*:}] }"
 zle -N zle-keymap-select
 zle -N zle-line-init
 # Init.

@@ -6,8 +6,8 @@
 # only then values from $terminfo are valid
 # NOTE: this calls any previously defined zle widgets (chained).
 if (( ${+terminfo[smkx]} )) && (( ${+terminfo[rmkx]} )); then
-  eval "zle-line-init()   { echoti smkx; $functions[zle-line-init]; }"
-  eval "zle-line-finish() { echoti rmkx; $functions[zle-line-finish]; }"
+  eval "zle-line-init()   { echoti smkx; $functions[${widgets[zle-line-init]#*:}] }"
+  eval "zle-line-finish() { echoti rmkx; $functions[${widgets[zle-line-finish]#*:}] }"
   zle -N zle-line-init
   zle -N zle-line-finish
 fi
