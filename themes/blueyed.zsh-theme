@@ -463,18 +463,23 @@ prompt_blueyed_precmd () {
     fi
 
     # exit status
-    local -h disp
+    local -h disp was_error
     if [[ $exitstatus -ne 0 ]] ; then
         if (( $exitstatus == 148 )); then
             disp="(bg)"
         elif [[ $exitstatus == 141 ]]; then
             # SIGPIPE
         else
-            disp=" "
-            if (( exitstatus != 1 )); then
-                disp+=":$exitstatus"
-                if [ $exitstatus -gt 128 -a $exitstatus -lt 163 ] ; then
-                    disp+=":${signals[$exitstatus-127]}"
+            was_error=1
+            if [[ $exitstatus == 130 ]]; then
+                disp="┻━┻"
+            else
+                disp=" "
+                if (( exitstatus != 1 )); then
+                    disp+=":$exitstatus"
+                    if [[ $exitstatus -gt 128 && $exitstatus -lt 163 ]] ; then
+                        disp+=":${signals[$exitstatus-127]}"
+                    fi
                 fi
             fi
         fi
@@ -512,9 +517,12 @@ prompt_blueyed_precmd () {
     local char_hr="―"
     local fillbar_len=$((COLUMNS - (rprompt_len + prompt_len)))
 
+    local pr_color
+    [[ $was_error = 1 ]] && pr_color="${errortext}" || pr_color="${normtext}"
+
     if (( fillbar_len > 3 )); then
         # There is room for a hr-prefix.
-        prompt="${char_hr}${char_hr} ${prompt}"
+        prompt="${pr_color}${char_hr}${char_hr} ${prompt}"
         (( prompt_len += 3 ))
         (( fillbar_len -= 3))
     fi
@@ -535,6 +543,8 @@ prompt_blueyed_precmd () {
             fi
         done
     fi
+    rprompt+=" ${pr_color}${char_hr}${char_hr}"
+    (( rprompt_len += 3 ))
 
     # Dynamically adjusted fillbar, via SIGWINCH / zle reset-prompt.
     # NOTE: -1 offset is used to fix redrawing issues after (un)maximizing,
@@ -542,9 +552,15 @@ prompt_blueyed_precmd () {
     # NOTE: (p) flag and use of $char_hr works in 5.0.8+ only.
     PR_FILLBAR="$PR_RESET${(l~(COLUMNS-($rprompt_len + $prompt_len)-1 < 0 ? 0 : COLUMNS-($rprompt_len + $prompt_len)-1)~~―~)}"
 
-    local -h prompt_sign="%{%(?.${fg_no_bold[blue]}.${fg_no_bold[red]})%}❯%{%(#.${roottext}.${prompttext})%}❯"
+    prompt_vcs=${repotext}${${prompt_vcs/#git:/ λ }}
 
-    prompt_vcs=${repotext}${${prompt_vcs/#git:/ λ }%% #}
+    local -h prompt_sign  # ="%{%(?.${fg_no_bold[green]}.${fg_no_bold[red]})%}❯❯"
+    if (( $was_error )); then
+        prompt_sign="%{${fg_no_bold[red]}%}"
+    else
+        prompt_sign="%{${fg_no_bold[green]}%}"
+    fi
+    prompt_sign+="❯❯"
 
     PS1="${PR_RESET}${prompt}${PR_FILLBAR}${rprompt}
 ${prompt_vcs}${prompt_sign} ${PR_RESET}"
