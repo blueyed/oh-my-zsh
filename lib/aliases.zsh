@@ -339,8 +339,17 @@ fi
 # Systemd.
 if (( $+commands[systemctl] )); then
   alias sc=systemctl
-  alias ssc="sudo systemctl"
-  alias jxe="journalctl -xe"
+  alias scu='systemctl --user'
+  if [[ $UID = 0 ]]; then
+    alias ssc='systemctl'
+  else
+    alias ssc='sudo systemctl'
+  fi
+  alias jc='journalctl'
+  alias jcu='journalctl --user'
+  alias jxe='journalctl -x -e -nall'
+  alias jxf='journalctl -x -e -f'
+  alias jcs='journalctl --system'
 fi
 
 # Colored cat/less.
