@@ -89,7 +89,6 @@ plugins=(git dirstack apt)
 zstyle ':completion::complete:grunt::options:' show_grunt_path yes
 
 fpath=(~/.dotfiles/lib/zsh-completions/src $fpath)
-fpath=(~/.dotfiles/lib/docker-zsh-completion $fpath)
 
 # Define FZF_DEFAULT_OPTS before the theme gets loaded.
 # Should not be overwritten in case it exists (tmux).
@@ -543,7 +542,10 @@ timeit() {
     done )
 }
 
-# complete words from tmux pane(s) {{{1
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
+
+# Complete words from tmux pane(s) {{{1
 # Source: http://blog.plenz.com/2012-01/zsh-complete-words-from-tmux-pane.html
 # Gist: https://gist.github.com/blueyed/6856354
 _tmux_pane_words() {
