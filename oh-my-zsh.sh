@@ -49,14 +49,17 @@ else
   SHORT_HOST=${HOST/.*/}
 fi
 
-# Save the location of the current completion dump file.
-if [ -z "$ZSH_COMPDUMP" ]; then
-  ZSH_COMPDUMP="${ZDOTDIR:-${HOME}}/.zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
-fi
-
-# Load and run compinit
+# Load and run compinit.
+# Skip looking for new functions (and audit) by default; do it once per day.
 autoload -U compinit
-compinit -i -d "${ZSH_COMPDUMP}"
+# NOTE: uses just "[" for the globbing, otherwise extendedglob and (#q..) is required.
+if [ ~/.zcompdump(md+1N) ]; then
+  echo "Updating compinit…" >&2
+  compinit
+  touch ~/.zcompdump
+else
+  compinit -C
+fi
 
 # Load all of the plugins that were defined in ~/.zshrc
 for plugin ($plugins); do
