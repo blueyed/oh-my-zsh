@@ -161,41 +161,152 @@ gb() {
 }
 compdef -e 'words=(git branch "${(@)words[2,-1]}"); ((CURRENT++)); _normal' gb
 
-alias gbm='git branch --merged'
-alias gbnm='git branch --no-merged'
+alias gbr='hub browse'
+# git branches, sorted by date (based on http://stackoverflow.com/a/22972547/15690).
+gbd() {
+    local reset_color=`tput sgr0`
+    local subject_color=`tput setaf 4 ; tput bold`
+    local author_color=`tput setaf 6`
+    local target=refs/heads
+    local branch_color=`git config --get-color color.branch.local blue`
+    if [ "$1" = -r ]; then
+        target=refs/remotes/origin
+        branch_color=`git config --get-color color.branch.remote red`
+    fi
+    git for-each-ref --sort=committerdate $target \
+        --format="%(committerdate:short) ${branch_color}%(refname:short)${reset_color} ${subject_color}%(subject)${reset_color} ${author_color}- %(authorname)${reset_color}" \
+        | less --no-init --chop-long-lines --QUIT-AT-EOF
+}
+gbm() {
+  gbmcleanup -l $*
+}
+alias gbnm='gb --no-merged'
 
-# Delete merged branched.
+alias gbsg='git bisect good'
+alias gbsb='git bisect bad'
+alias gbsr='git bisect reset'
+
+# Delete or list merged branched.
 gbmcleanup() {
-  zparseopts -a opts f q h i d
+  setopt localoptions errreturn
+  local -a opts only
+  zparseopts -D -a opts f q h i n l m v o+:=only
   local curb merged
-  local force interactive
-  local from_branches='^(master|dev)$'
-  local keep_branches='^(master|dev|local)$'
+  local -A no_diff
+  local from_branches='^(master|develop)$'
+  local keep_branches='^(master|develop|local)$'
 
   if (( $opts[(I)-h] )); then
     echo "Cleans merged branches."
-    echo "$0 [-i] [-f] [-q]"
+    echo "$0 [-i] [-f] [-n] [-l] [-m] [-v] [-o branch]"
+    echo " -l: list"
+    echo " -n: dry run"
+    echo " -i: interactive"
+    echo " -f: force"
+    echo " -m: test for empty merges"
+    echo " -v: verbose"
     return
   fi
-  interactive=$opts[(I)-i]
-  force=$opts[(I)-f]
-  dry_run=$opts[(I)-d]
+  local interactive=$opts[(I)-i]
+  local force=$opts[(I)-f]
+  local dry_run=$opts[(I)-n]
+  local list=$opts[(I)-l]
+  local test_merges=$opts[(I)-m]
+  local verbose=$opts[(I)-v]
+  only=(${only:#-o})
+  local branch="$1"
 
-  curb=$(current_branch)
+  curb="$(current_branch)"
   if [[ -z $curb ]]; then
     echo "No current branch. Aborting."
     return 1
   fi
-  if ! [[ $curb =~ $from_branches ]] && ! (( $force )) && ! (( $dry_run )); then
+
+  if ! (( $list )) && ! (( $force )) && ! (( $dry_run )) \
+      && ! [[ $curb =~ $from_branches ]] ; then
     echo "Current branch does not match '$from_branches'." 2>&1
     echo "Use -f to force." 2>&1
     return 1
   fi
 
-  merged=($(git branch --merged | sed '/^*/d' | cut -b3- | sed "/$keep_branches/d"))
+  merged=($($_git_cmd branch --merged $branch | sed '/^*/d' | cut -b3- \
+    | sed "/$keep_branches/d"))
+
+  local b not_merged
+  not_merged=(${(f)"$($_git_cmd branch --no-merged | cut -b3- | sed "/$keep_branches/d")"})
+  if [[ -n $only ]]; then
+    not_merged=(${not_merged:*only})
+  fi
+
+  local branch_color=`git config --get-color color.branch.local blue`
+  local reset_color=`tput sgr0`
+
+  if (( $#not_merged )); then
+    if (( $test_merges )); then
+      local diff out cmd rev_list merge_base
+      local -A rev_diff
+      for b in $not_merged; do
+        echo -n '.'
+        # Look for empty merges (no hunks with git-merge-tree).
+        # Otherwise "merged" means that it could be merged without conflicts.
+        merge_base=$($_git_cmd merge-base HEAD "$b")
+        cmd=($_git_cmd merge-tree $merge_base HEAD "$b")
+        out=("${(@f)$($cmd)}")
+        if ! print -l $out | \grep -q '^@@'; then
+          no_diff+=($b "empty merge")
+          continue
+        else
+          # Check for cherry-picks, that cause a conflict with merge-tree, but
+          # should be OK.
+          rev_list=(${(f)"$($_git_cmd rev-list --abbrev-commit "$merge_base..HEAD")"})
+          branch_diff=$($_git_cmd diff "$merge_base" $b)
+          for i in $rev_list; do
+            if [[ -z "${rev_diff[$i]}" ]]; then
+              rev_diff[$i]="$(git diff "$i^" "$i")"
+            fi
+            if [[ "$rev_diff[$i]" == "$branch_diff" ]]; then
+              no_diff+=($b "cherry-picked in $($_git_cmd name-rev $i)")
+              continue
+            fi
+          done
+        fi
+        if (( $verbose )); then
+          if (( $#only )); then
+            echo "cmd: $cmd" >&2
+            print -l $out >&2
+          else
+            echo "$out[1]: $branch_color$b$reset_color ($#out lines)" >&2
+          fi
+        fi
+      done
+      echo
+    else
+      echo "NOTE: Not testing $#not_merged non-merged branches, use -m." >&2
+    fi
+  fi
+
+  if (( $list )); then
+    if (( $#merged )); then
+      echo ${(%):-"%BMerged branches:%b"} >&2
+      for b in $merged; do
+        echo "$branch_color$b$reset_color"
+      done
+    fi
+    if (( $#no_diff )); then
+      echo ${(%):-"%BBranches with empty merges:%b"} >&2
+      for b in ${(k)no_diff}; do
+        echo "$branch_color$b$reset_color: $no_diff[$b]"
+      done
+    fi
+    return
+  fi
+  merged+=($no_diff)
+  if ! (( $#merged )); then
+    return
+  fi
 
   local cmd
-  cmd=(git branch -d)
+  cmd=(git branch -D)
   if (( $dry_run )); then
     cmd=(echo $cmd)
   fi
