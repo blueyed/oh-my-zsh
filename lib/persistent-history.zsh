@@ -13,6 +13,12 @@ alias zhist="lessx $_zsh_persistent_history_logfile"
 
 _zsh_persistent_history_preexec_hook() {
   local -h date cwd info output
+
+  # Skip commands starting with space.
+  if [[ "$1" == ' '* ]]; then
+    return
+  fi
+
   date=${(%):-'%D{%F %T.%. (%a)}'}
   cwd="${PWD/#$HOME/~}"
   info=("($$) in $cwd")
@@ -21,17 +27,24 @@ _zsh_persistent_history_preexec_hook() {
   if (( $+MC_SID )); then
     info+=("(mc)")
   fi
-  output="== $date $info: $1"
+  local output="== $date $info: $1"
 
   # Take over expanded version, if different, massaged to be on a single line.
   # TODO: handle newlines better?!
-  if [[ $1 != ${3%% } ]] && [[ $1 != ${(pj:; :)${(f)${3%% }}} ]]; then
+  typeset -g _zsh_persistent_history_preexec_expanded
+  local trimmed3=${3%% }
+  trimmed3=${trimmed3## }
+  local trimmed1=${1%% }
+  trimmed1=${trimmed1## }
+  if [[ $trimmed1 != $trimmed3 ]] && [[ $trimmed1 != ${(pj:; :)${(f)${trimmed3}}} ]]; then
     # NOTE: do not expand using "(e)", which would expand e.g. `foo`.
     # _zsh_persistent_history_preexec_expanded="${(pj: \\N :)${(e)${3}} -- }"
     _zsh_persistent_history_preexec_expanded="${(pj: \\N :)${3}}"
   else
-    _zsh_persistent_history_preexec_expanded=""
+    _zsh_persistent_history_preexec_expanded=
   fi
+  typeset -g _zsh_persistent_history_preexec_output
+  typeset -g _zsh_persistent_history_starttime
   _zsh_persistent_history_preexec_output="$output"
   _zsh_persistent_history_starttime=$EPOCHREALTIME
 }
@@ -46,7 +59,7 @@ _zsh_persistent_history_precmd_hook() {
 
   endtime=$EPOCHREALTIME
 
-  output=$_zsh_persistent_history_preexec_output
+  local output=$_zsh_persistent_history_preexec_output
   if [ $exitstatus != 0 ]; then
     output+=" [es:$exitstatus]"
   fi
@@ -55,12 +68,15 @@ _zsh_persistent_history_precmd_hook() {
   if (( duration > 0 )); then
     output+=" [dur:${duration}s]"
     if (( duration > 10 )); then
-      output+=" [endtime:${(%):-%D{%T.%.\}}]"
+      output+=" [endtime:${(%):-%D{%T.%.}}]"
     fi
   fi
   if [[ -n $_zsh_persistent_history_preexec_expanded ]]; then
     # echo "DEBUG: _zsh_persistent_history_preexec_expanded: $_zsh_persistent_history_preexec_expanded"
     output+=" [expanded:$_zsh_persistent_history_preexec_expanded]"
+  fi
+  if [[ -n "$MY_X_SESSION_NAME" ]]; then
+    output+=" [session:$MY_X_SESSION_NAME]"
   fi
   echo $output >> $_zsh_persistent_history_logfile
   unset _zsh_persistent_history_preexec_output
