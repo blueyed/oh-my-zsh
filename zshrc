@@ -82,8 +82,7 @@ export DISABLE_AUTO_UPDATE="true"
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Example format: plugins=(rails git textmate ruby ighthouse)
-# NOTE: pip used from zsh-completions, but has no support for packages (https://github.com/zsh-users/zsh-completions/issues/194)
-plugins=(git dirstack apt)
+plugins=(git dirstack)
 
 fpath=(~/.dotfiles/lib/zsh-completions/src $fpath)
 
