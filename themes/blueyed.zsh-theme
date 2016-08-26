@@ -718,13 +718,13 @@ function +vi-git-st() {
 
     local ahead_and_behind_cmd ahead_and_behind
     local ahead behind upstream
-    local branch_color remote_color local_branch local_branch_disp
+    local branch_color local_branch local_branch_disp
     local -a gitstatus
     local remote_color="%{$fg_no_bold[blue]%}"
 
     # NOTE: "branch" might come shortened as "$COMMIT[0,7]..." from Zsh.
     #       (gitbranch="${${"$(< $gitdir/HEAD)"}[1,7]}…").
-    local_branch=${hook_com[branch]}
+    local_branch=${hook_com[branch]:s/.../…}
 
     # Are we on a remote-tracking branch?
     upstream=${$($_git_cmd rev-parse --verify ${local_branch}@{upstream} \
