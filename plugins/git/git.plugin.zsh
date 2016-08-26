@@ -4,6 +4,11 @@ zstyle -s ":vcs_info:git:*:-all-" "command" _git_cmd
 
 # Aliases
 alias g='git'
+# To bypass git-so-fancy.
+# alias gnp='git --no-pager'
+alias git-no-fancy='git -c pager.diff="less" -c pager.log="less" -c pager.show="less"'
+alias gnf='git -c pager.diff="less" -c pager.log="less" -c pager.show="less"'
+
 alias ga='git add'
 alias gap='git add --patch'
 alias gae='git add --edit'
@@ -425,7 +430,9 @@ gcopr() {
 alias gcount='git shortlog -s --numbered --email'
 alias gcp='git cherry-pick'
 
-alias gd='git diff --submodule --patch-with-stat'
+alias gd='git diff --submodule=short --patch-with-stat'
+# without diff-so-fancy
+alias gdnf='git-no-fancy diff --submodule=short --patch-with-stat'
 alias gdc='git diff --cached --patch-with-stat'
 alias gdf='gd $(git merge-base --fork-point master)'
 
