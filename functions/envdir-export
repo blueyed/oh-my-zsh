@@ -1,0 +1,17 @@
+setopt extendedglob
+
+local envdir=$1
+
+if ! [ -d "$envdir" ]; then
+  echo "$envdir is not a dir."
+  return 1
+fi
+
+# for i in $envdir/*~*.*(.); do  # would exclude everything with a dot in $envdir.
+for i in $envdir/*(.); do
+  if [[ "${i:t}" == *.* ]]; then
+    continue
+  fi
+  echo "Exporting $i:t"
+  eval "export ${i:t}='$(<$i)'"
+done
