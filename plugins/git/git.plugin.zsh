@@ -11,7 +11,8 @@ alias gae='git add --edit'
 # Function for "git branch", handling the "list" case, by sorting it according
 # to committerdate, and displaying it.
 gb() {
-  local refs
+  setopt localoptions rcexpandparam
+  local refs limit=100
   if [[ -z $1 ]]; then
     refs=(refs/heads)
   elif [[ $# == 1 ]]; then
@@ -19,6 +20,13 @@ gb() {
       refs=(refs/remotes)
     elif [[ $1 == '-a' ]]; then
       refs=(refs/heads refs/remotes)
+    elif [[ $1 == <-> ]]; then
+      # Display last X branches only.
+      refs=(refs/heads)
+      limit=$1
+    elif [[ $1 == '--no-merged' ]]; then
+      # Pass options to git-branch, e.g. '--no-merged' and use resulting refs.
+      refs=(refs/heads/${(@)$($_git_cmd branch $1)})
     fi
   fi
 
@@ -27,61 +35,68 @@ gb() {
     local color_date=${(%):-'%F{cyan}'}
     local color_subject=${(%):-'%B%f'}
     local color_author=${(%):-'%F{blue}'}
-    local color_reset=${(%):-'%f%b'}
+    local color_current=${(%):-$(git config --get-color color.branch.current blue)}
+    local color_local=${(%):-$(git config --get-color color.branch.local normal)}
+    local color_remote=${(%):-$(git config --get-color color.branch.remote red)}
     local current=$(current_branch)
     local line
     typeset -a lines info_string
     info_string=(
       "%(refname:short)"
       "%(authorname)"
-      "${color_date}%(committerdate:relative)${color_reset}"
-      "${color_subject}%(subject)${color_reset}"
+      "${color_date}%(committerdate:relative)${reset_color}"
+      "${color_subject}%(subject)${reset_color}"
       "%(objectname:short)"
     )
-    local my_name="$(git config user.name)"
-    for b in ${(f)"$(git for-each-ref --sort=-committerdate $refs \
-      --format="\0${(j:\0:)info_string}")"}; do
+    local my_name="$($_git_cmd config user.name)"
+    local b
+    for b in ${(f)"$($_git_cmd for-each-ref --sort=-committerdate $refs \
+        --format="\0${(j:\0:)info_string}" --count=$limit)"}; do
       b=(${(s:\0:)b})
+      line=""
 
-      if [[ ${b[1]} == $current ]]; then
-        line=${(%):-'%F{green}* '}
-      elif [[ ${b[1]} == */* ]]; then
-        line=${(%):-'%F{red}  '}
-      else
-        line=${(%):-'%F{default}  '}
-      fi
-
-      # Describe object name.
-      b[5]="${color_object}$($_git_cmd describe --contains --always $b[5])${color_reset}"
+      # Describe object name (and keep orig sha for comparison with prev_sha).
+      b[6]=${b[5]}
+      b[5]="${color_object}$($_git_cmd describe --contains --always $b[5])${reset_color}"
 
       # Decorate or remove author name.
       local author_name=$b[2]
       b=($b[1] $b[3,-1])
       if [[ $author_name != $my_name ]]; then
-        b[3]="$b[3] (${color_author}$author_name${color_reset})"
+        b[3]="$b[3] (${color_author}$author_name${reset_color})"
       else
         # Include escape codes for zformat alignment.
-        b[3]="$b[3] ${color_author}${color_reset}"
+        b[3]="$b[3] ${color_author}${reset_color}"
       fi
 
-      lines+=("$line${b[1]}\0${(j-\0-)${(@)b[2,-1]}}")
+      lines+=("${b[1]}\0${(j-\0-)${(@)b[2,-1]}}")
     done
 
     # Use zformat recursively, which requires escaping ":" on the left side.
     typeset -a before escaped_lines format_lines
-    local i left right
-    format_lines=($lines)
+    local i left right split
+    # Copy lines to format_lines with last column (orig sha) removed.
+    for line in $lines; do
+      split=(${(s:\0:)line})
+      format_lines+=("${(j:\0:)split[1,-2]}")
+    done
     local col=1
 
+    local maxlen
     while true; do
       before=($format_lines)
       escaped_lines=()
 
       local linenum=1
+      if (( COLUMNS > 100 )); then
+        (( $col == 1 )) && maxlen=50 || maxlen=30
+      else
+        (( $col == 1 )) && maxlen=40 || maxlen=20
+      fi
       for line in $format_lines; do
         split=(${(s:\0:)line})
-        if (( ${#:-"$(remove_ansi_codes ${split[$col]})"} > 30 )); then
-          split[$col]="skipped89012345678901234567890"
+        if (( ${#:-"$(remove_ansi_codes ${split[$col]})"} > $maxlen )); then
+          split[$col]="__skipped_$(printf '.%.0s' {1..$((maxlen-10))})"
         fi
         # Escape left side.
         left=${${(j:\0:)split[1,$col]}//:/\\:}
@@ -98,14 +113,41 @@ gb() {
       fi
     done
 
+    (( $#format_lines )) || return
+
+    local orig_cols orig_col1 sha
+    local cur_sha="$($_git_cmd rev-parse --verify -q --short HEAD)"
+    local prev_sha="$($_git_cmd rev-parse --verify -q --short @{-1})"
     for i in {1..$#format_lines}; do
       line=$format_lines[$i]
       split=(${(s:\0:)line})
       for col in {1..$#split}; do
-        if [[ $split[$col] == "skipped"* ]]; then
+        if [[ $split[$col] == "__skipped_"* ]]; then
           split[$col]=${${(s:\0:)lines[$i]}[$col]}
         fi
       done
+
+      # Prepend different colors.
+      orig_cols=(${(s:\0:)lines[$i]})
+      orig_col1=${orig_cols[1]}
+      sha="${orig_cols[-1]}"
+      if [[ $sha == $cur_sha ]]; then
+        split[1]="* $split[1]"
+      elif [[ $sha == $prev_sha ]]; then
+        split[1]="- $split[1]"
+      else
+        split[1]="  $split[1]"
+      fi
+
+      if [[ $orig_col1 == $current ]]; then
+        # split[1]="${(%):-%B}${split[1]}${(%):-%b}"
+        split[1]="${color_current}$split[1]"
+      elif [[ $orig_col1 == */* ]]; then
+        split[1]="${color_remote}$split[1]"
+      else
+        split[1]="${color_local}$split[1]"
+      fi
+
       # if [[ ${format_lines[$line]} != "skipped" ]]; then
       lines[$i]=${(j: :)split}
     done
@@ -117,7 +159,7 @@ gb() {
     git branch "$@"
   fi
 }
-compdef _git gb=git-branch
+compdef -e 'words=(git branch "${(@)words[2,-1]}"); ((CURRENT++)); _normal' gb
 
 alias gbm='git branch --merged'
 alias gbnm='git branch --no-merged'
