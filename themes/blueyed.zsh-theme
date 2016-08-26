@@ -720,11 +720,7 @@ function +vi-git-st() {
     local ahead behind upstream
     local branch_color remote_color local_branch local_branch_disp
     local -a gitstatus
-
-    # # return if check-for-changes is false:
-    # if ! zstyle -t ':vcs_info:*:prompt:*' 'check-for-changes'; then
-    #     return 0
-    # fi
+    local remote_color="%{$fg_no_bold[blue]%}"
 
     # NOTE: "branch" might come shortened as "$COMMIT[0,7]..." from Zsh.
     #       (gitbranch="${${"$(< $gitdir/HEAD)"}[1,7]}…").
@@ -737,10 +733,19 @@ function +vi-git-st() {
     # Init local_branch_disp: shorten branch.
     if [[ $local_branch == bisect/* ]]; then
         local_branch_disp="-"
-    elif (( $#local_branch > 21 )) && ! [[ $local_branch == */* ]]; then
-        local_branch_disp="${local_branch:0:20}…"
+    elif (( $#local_branch == 40 )); then  # SHA1; TODO: match per regexp?!
+        local_branch_disp="${local_branch:0:7}…"
     else
-        local_branch_disp=$local_branch
+        if (( $#local_branch > 21 )) && ! [[ $local_branch == */* ]]; then
+            local_branch_disp="${local_branch:0:20}…"
+        else
+            local_branch_disp=$local_branch
+        fi
+        # Annotate tags with a label symbol.
+        # TODO: just check if file exists?!
+        if $_git_cmd show-ref --verify --quiet refs/tags/$local_branch; then
+            local_branch_disp="🏷 $local_branch_disp"
+        fi
     fi
 
     # Make branch name bold if not "master".
@@ -753,8 +758,6 @@ function +vi-git-st() {
         return 0
     fi
 
-    # Handle remote tracking branches.
-
     # Only shorten master, if there's a upstream branch.
     if [[ $local_branch == "master" ]]; then
         local_branch_disp="m"
@@ -766,68 +769,95 @@ function +vi-git-st() {
     ahead_and_behind="$(${(z)ahead_and_behind_cmd} 2> /dev/null)"
 
     ahead="$ahead_and_behind[(w)1]"
-    (( $ahead )) && gitstatus+=( "${normtext}+${ahead}" )
+    if (( $ahead )); then
+        ahead="${normtext}+${ahead}"
+        # Display a warning if there are fixup/squash commits that are usually
+        # meant to be interactively rebased.
+        if $_git_cmd log --pretty=format:%s @{upstream}.. | \grep -Eq '^(fixup|squash)!'; then
+            ahead+="${hitext}(f!)"
+        fi
+        gitstatus+=($ahead)
+    fi
 
     behind="$ahead_and_behind[(w)2]"
-    (( $behind )) && gitstatus+=( "${alerttext}-${behind}" )
+    if (( $behind )); then
+        # Display hint for fixup/squash commits, but in normal text.
+        if $_git_cmd log --pretty=format:%s ..@{upstream} | \grep -Eq '^(fixup|squash)!'; then
+            behind+="${dimmedtext}(f)"
+        fi
+        gitstatus+=( "${alerttext}-${behind}" )
+    fi
 
-    # Massage displayed upstream, according to common remotes etc.
-    local branchremote=$(git config branch.${local_branch}.remote)
-    local upstream_disp
-    if [[ $upstream == "origin/master" ]] ; then
-      if [[ $local_branch == master ]]; then
-        upstream_disp="o"
-      else
-        upstream_disp="o/m"
-      fi
+    if [[ -z ${upstream} ]] ; then
+        hook_com[branch]="${branch_color}${local_branch_disp}"
     else
-      # Remove local branch name from upstream.
-      if [[ $branchremote == "origin" ]]; then
-        local remotebranch=${upstream#${branchremote}/}
-        if [[ $remotebranch == $local_branch ]]; then
-            upstream_disp=$branchremote[1]
+        # Massage displayed upstream, according to common remotes etc.
+        local branchremote=$($_git_cmd config branch.${local_branch}.remote)
+        local upstream_disp
+        if [[ $upstream == "origin/master" ]] ; then
+          if [[ $local_branch == master ]]; then
+            upstream_disp="o"
+          else
+            upstream_disp="o/m"
+          fi
         else
-            upstream_disp=${branchremote[1]}/${remotebranch}
+          # Remove local branch name from upstream.
+          if [[ $branchremote == "origin" ]] \
+              || [[ $branchremote == $($_git_cmd config github.user) ]]; then
+            local remotebranch=${upstream#${branchremote}/}
+            if [[ $remotebranch == $local_branch ]]; then
+                upstream_disp=$branchremote[1]
+            else
+                upstream_disp=${branchremote[1]}/${remotebranch}
+            fi
+          else
+            upstream_disp=${upstream%/$local_branch}
+            if [[ ${upstream_disp/\//-} == $local_branch ]]; then
+              # username-branchname@username/branchname via `hub`:
+              # use just a checkmark.
+              upstream_disp=✓
+            fi
+          fi
         fi
-      else
-        upstream_disp=${upstream%/$local_branch}
-        if [[ ${upstream_disp/\//-} == $local_branch ]]; then
-          # username-branchname@username/branchname via `hub`:
-          # use just a checkmark.
-          upstream_disp=✓
+
+        # Check that "git push" would be sane.
+        #
+        # remote.pushdefault
+        #     The remote to push to by default. Overrides branch.<name>.remote for all branches, and is overridden by branch.<name>.pushremote for specific branches.
+        local pushdefault=$($_git_cmd config push.default)
+        typeset -a pushinfo
+        if [[ $pushdefault != simple ]]; then
+            # I use push.default=simple by default.
+            pushinfo+="cfg_pd:$pushdefault"
+        fi
+        local pushremote=$($_git_cmd config branch.${local_branch}.pushremote)
+        if [[ -n $pushremote ]]; then
+            if [[ $pushremote != $branchremote ]]; then
+                pushinfo+=(bpr:$pushremote)
+            fi
         else
-          remote_color="%{$fg_bold[blue]%}"
+            local remotepushdefault=$($_git_cmd config remote.pushdefault)
+            if [[ -n $remotepushdefault ]] && [[ $remotepushdefault != $branchremote ]]; then
+                pushinfo+=(rpd:$remotepushdefault)
+            fi
         fi
-      fi
+        if (( $#pushinfo )); then
+            upstream_disp+="${normtext}(${(j:;:)pushinfo})"
+        fi
+
+        hook_com[branch]="${branch_color}${local_branch_disp}${remote_color}@${upstream_disp}"
     fi
 
-    # Check that "git push" would be sane.
-    #
-    # remote.pushdefault
-    #     The remote to push to by default. Overrides branch.<name>.remote for all branches, and is overridden by branch.<name>.pushremote for specific branches.
-    local pushdefault=$(git config push.default)
-    typeset -a pushinfo
-    if [[ $pushdefault != simple ]]; then
-        # I use push.default=simple by default.
-        pushinfo+="cfg_pd:$pushdefault"
+    if [[ -n $gitstatus ]]; then
+        hook_com[branch]+="$bracket_open$normtext"
+        # if is-at-least 5.0.8; then
+        #     local delim=$normtext/
+        #     hook_com[branch]+=${(pj:$delim:)gitstatus}
+        # else
+            hook_com[branch]+=${(j:%f%b/:)gitstatus}
+        # fi
+        hook_com[branch]+="$bracket_close"
     fi
-    local pushremote=$(git config branch.${local_branch}.pushremote)
-    if [[ -n $pushremote ]]; then
-        if [[ $pushremote != $branchremote ]]; then
-            pushinfo+=(bpr:$pushremote)
-        fi
-    else
-        local remotepushdefault=$(git config remote.pushdefault)
-        if [[ -n $remotepushdefault ]] && [[ $remotepushdefault != $branchremote ]]; then
-            pushinfo+=(rpd:$remotepushdefault)
-        fi
-    fi
-    if (( $#pushinfo )); then
-        upstream_disp+="${normtext}(${(j:;:)pushinfo})"
-    fi
-
-    hook_com[branch]="${branch_color}${local_branch_disp}$remote_color@${upstream_disp}"
-    [[ -n $gitstatus ]] && hook_com[branch]+="$bracket_open$normtext${(j:/:)gitstatus}$bracket_close"
     return 0
 }
 
