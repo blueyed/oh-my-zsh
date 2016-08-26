@@ -85,9 +85,6 @@ export DISABLE_AUTO_UPDATE="true"
 # NOTE: pip used from zsh-completions, but has no support for packages (https://github.com/zsh-users/zsh-completions/issues/194)
 plugins=(git dirstack apt)
 
-# grunt-zsh-completion
-zstyle ':completion::complete:grunt::options:' show_grunt_path yes
-
 fpath=(~/.dotfiles/lib/zsh-completions/src $fpath)
 
 # Define FZF_DEFAULT_OPTS before the theme gets loaded.
