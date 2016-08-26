@@ -2,14 +2,17 @@
 if (( $+SSH_CONNECTION )); then
   return
 fi
-if ! (( $+_ZSH_IS_SSH )); then
+typeset -g _ZSH_IS_SSH
+if [[ -z $_ZSH_IS_SSH ]]; then
   # "who am i" displays current user from utmp(5).  This will be empty
   # in most cases, e.g. with rxvt-unicode in an X session.
   # With Konsole, it is ":0" for display :0, for ssh it is the hostname
   # and with tmux sth like "tmux(PID).ID".
   # NOTE: not available on diskstation (busybox 1.16.1).
-  local host=${${:-"$(who am i 2>/dev/null)"}#*\(*}
-  [[ -n $host && $host != tmux* && $host != :* ]]
+  local whoami=$(who am i 2>/dev/null)
+  local host=${${whoami#*\(*}%\)}
+  [[ $host != $whoami && $host != tmux* ]] \
+    && [[ $host == ::1 || $host != :* ]]  # ipv6 localhost or not X display.
   _ZSH_IS_SSH=$?
 fi
 return $_ZSH_IS_SSH
