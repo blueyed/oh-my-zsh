@@ -14,6 +14,10 @@ fi
 
 bindkey -v                                            # Use vim key bindings
 
+bindkey -e
+bindkey '^[' vi-cmd-mode
+
+
 bindkey '\ew' kill-region                             # [Esc-w] - Kill from the cursor to the mark
 bindkey '^r' history-incremental-search-backward      # [Ctrl-r] - Search backward incrementally for a specified string. The string may begin with ^ to anchor the search to the beginning of the line.
 if [[ "${terminfo[kpp]}" != "" ]]; then
@@ -127,7 +131,6 @@ bindkey -M vicmd 'u' undo # stacked undo!
 # Map run-help also in vicmd mode.
 bindkey -M vicmd "\eh" run-help
 bindkey -M viins 'jk' vi-cmd-mode
-# bindkey -M viins 'kj' vi-cmd-mode
 bindkey -M viins ' ' magic-space
 bindkey -M viins '\C-i' complete-word
 
@@ -167,7 +170,6 @@ bindkey '^[^[[C' forward-word
 bindkey '^[[5D' beginning-of-line
 bindkey '^[[5C' end-of-line
 bindkey '^[[3~' delete-char
-bindkey '^[^N' newtab
 
 # Overwrite vi-backward-kill-word, which stops at where insert mode was last entered.
 bindkey '^w' backward-kill-word
