@@ -245,13 +245,15 @@ gbmcleanup() {
 
   local branch_color=`git config --get-color color.branch.local blue`
   local reset_color=`tput sgr0`
+  local cmd
 
   if (( $#not_merged )); then
     if (( $test_merges )); then
-      local diff out cmd rev_list merge_base
+      local diff out rev_list merge_base
       local -A rev_diff
+      local display_progress=$(($#not_merged > 20))
       for b in $not_merged; do
-        echo -n '.'
+        (( display_progress )) && echo -n '.' >&2
         # Look for empty merges (no hunks with git-merge-tree).
         # Otherwise "merged" means that it could be merged without conflicts.
         merge_base=$($_git_cmd merge-base HEAD "$b")
@@ -284,7 +286,7 @@ gbmcleanup() {
           fi
         fi
       done
-      echo
+      (( display_progress )) && echo
     else
       echo "NOTE: Not testing $#not_merged non-merged branches, use -m." >&2
     fi
@@ -305,12 +307,11 @@ gbmcleanup() {
     fi
     return
   fi
-  merged+=($no_diff)
+  merged+=(${(k)no_diff})
   if ! (( $#merged )); then
     return
   fi
 
-  local cmd
   cmd=(git branch -D)
   if (( $dry_run )); then
     cmd=(echo $cmd)
