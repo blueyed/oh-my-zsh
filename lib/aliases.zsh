@@ -38,7 +38,7 @@ psgrep() {
   output=(${(f):-"$(ps -fp ${=pids})"})
   if [[ -t 1 ]]; then
     colored=$(echo ${(F)output} | \grep --color=always ${^:--e"$patterns"} -e '^')
-    echo "$colored" | LESS= less -S -R -X --quit-if-one-screen
+    echo "$colored" | LESS= less -R -X --quit-if-one-screen
   else
     ps -fp $pids
   fi
