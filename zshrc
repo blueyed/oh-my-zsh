@@ -373,10 +373,12 @@ vit () {(
     unset DIRSTACKFILE
     cd $1; shift
   fi
-  vi -t "$@"
+  [[ "$#" = 1 ]] || { echo "Only one tag arg expected." >&2; return 1}
+  # vi -t "$@"
+  vi -c "tj $@"
   )}
 alias vdf="vit ~df"
-compdef -e '(( CURRENT > 2 )) && cd ${~words[2]}; _complete_tag' vit
+compdef -e '(( CURRENT > 2 )) && cd -q ${~words[2]} >/dev/null; _complete_tag; (( CURRENT > 2 )) && cd -q - >/dev/null' vit
 # }}}
 
 # Restart network interface
