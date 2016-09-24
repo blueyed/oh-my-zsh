@@ -785,7 +785,11 @@ function +vi-git-st() {
         if $_git_cmd log --pretty=format:%s ..@{upstream} | \grep -Eq '^(fixup|squash)!'; then
             behind+="${dimmedtext}(f)"
         fi
-        gitstatus+=( "${alerttext}-${behind}" )
+        if [[ -z "$ahead" ]]; then
+            gitstatus+=( "${hitext}-${behind}" )
+        else
+            gitstatus+=( "${normtext}-${behind}" )
+        fi
     fi
 
     if [[ -z ${upstream} ]] ; then
