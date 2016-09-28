@@ -252,7 +252,17 @@ gbmcleanup() {
       local diff out rev_list merge_base
       local -A rev_diff
       local display_progress=$(($#not_merged > 20))
+      local -F 2 start duration
+      local last_b
       for b in $not_merged; do
+        if [[ -n "$last_b" ]]; then
+          duration=$(( ($(print -P '%D{%s%.}') - start) / 1000 ))
+          if (( duration > 1.0 )); then
+            echo "slow: $last_b (${duration}s)"
+          fi
+        fi
+        start=$(print -P '%D{%s%.}')
+        last_b=$b
         (( display_progress )) && echo -n '.' >&2
         # Look for empty merges (no hunks with git-merge-tree).
         # Otherwise "merged" means that it could be merged without conflicts.
