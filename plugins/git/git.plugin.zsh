@@ -221,21 +221,23 @@ gbmcleanup() {
   only=(${only:#-o})
   local branch="$1"
 
-  curb="$(current_branch)"
-  if [[ -z $curb ]]; then
-    echo "No current branch. Aborting."
-    return 1
+  if [[ -z "$branch" ]]; then
+    branch="$(current_branch)"
+    if [[ -z $branch ]]; then
+      echo "No current branch. Aborting."
+      return 1
+    fi
   fi
 
   if ! (( $list )) && ! (( $force )) && ! (( $dry_run )) \
-      && ! [[ $curb =~ $from_branches ]] ; then
+      && ! [[ $branch =~ $from_branches ]] ; then
     echo "Current branch does not match '$from_branches'." 2>&1
     echo "Use -f to force." 2>&1
     return 1
   fi
 
-  merged=($($_git_cmd branch --merged $branch | sed '/^*/d' | cut -b3- \
-    | sed "/$keep_branches/d"))
+  merged=($($_git_cmd branch --merged $branch | sed -E "/^[* ] $branch\$/d" \
+    | cut -b3- | sed "/$keep_branches/d"))
 
   local b not_merged
   not_merged=(${(f)"$($_git_cmd branch --no-merged | cut -b3- | sed "/$keep_branches/d")"})
