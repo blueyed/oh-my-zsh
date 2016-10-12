@@ -10,7 +10,7 @@ args=(
   '(-)'--version'[display version information and exit]'
   '(-)1:directory: _path_files -/'
   '(-)2:command: _command_names -e'
-  '*::arguments: _normal'
+  '*::arguments: _precommand'
 )
 
 _arguments -S $args
