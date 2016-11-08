@@ -556,14 +556,28 @@ _tmux_pane_words() {
     _message "not running inside tmux!"
     return 1
   fi
-  # capture current pane first
-  w=( ${(u)=$(tmux capture-pane -J -p)} )
+
+  # Based on vim-tmuxcomplete's splitwords function.
+  # https://github.com/wellle/tmux-complete.vim/blob/master/sh/tmuxcomplete
+  _tmux_capture_pane() {
+    tmux capture-pane -J -p -S -100 $@ |
+      # Remove "^C".
+      sed 's/\^C\S*/ /g' |
+      # copy lines and split words
+      sed -e 'p;s/[^a-zA-Z0-9_]/ /g' |
+      # split on spaces
+      tr -s '[:space:]' '\n' |
+      # remove surrounding non-word characters
+      =grep -o "\w.*\w"
+  }
+  # Capture current pane first.
+  w=( ${(u)=$(_tmux_capture_pane)} )
+  echo $w > /tmp/w1
   local i
-  for i in $(tmux list-panes -F '#P'); do
-    # skip current pane (handled above)
+  for i in $(tmux list-panes -F '#D'); do
+    # Skip current pane (handled before).
     [[ "$TMUX_PANE" = "$i" ]] && continue
-    # TODO: split words: e.g. "foo(bar" should be "foo" and "bar".
-    w+=( ${(u)=$(tmux capture-pane -J -p -t $i)} )
+    w+=( ${(u)=$(_tmux_capture_pane -t $i)} )
   done
   _wanted values expl 'words from current tmux pane' compadd -a w
 }
@@ -574,9 +588,10 @@ bindkey '^X^Tt' tmux-pane-words-prefix
 bindkey '^X^TT' tmux-pane-words-anywhere
 zstyle ':completion:tmux-pane-words-(prefix|anywhere):*' completer _tmux_pane_words
 zstyle ':completion:tmux-pane-words-(prefix|anywhere):*' ignore-line current
-# display the (interactive) menu on first execution of the hotkey
+# Display the (interactive) menu on first execution of the hotkey.
 zstyle ':completion:tmux-pane-words-(prefix|anywhere):*' menu yes select interactive
-zstyle ':completion:tmux-pane-words-anywhere:*' matcher-list 'b:=* m:{A-Za-z}={a-zA-Z}'
+# zstyle ':completion:tmux-pane-words-anywhere:*' matcher-list 'b:=* m:{A-Za-z}={a-zA-Z}'
+zstyle ':completion:tmux-pane-words-(prefix|anywhere):*' matcher-list 'b:=* m:{A-Za-z}={a-zA-Z}'
 # }}}
 
 # goodness from grml-etc-core {{{1
