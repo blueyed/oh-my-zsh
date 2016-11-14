@@ -865,6 +865,14 @@ zsh_disable_highlighting() {
 }
 
 
+# Make git-checkout completion less verbose with empty prefix/suffix.
+zstyle -e ':completion:*:git-checkout:*' tag-order '
+  if [[ -z $PREFIX$SUFFIX ]]; then
+    reply=("! commit-tags heads-remote remote-branch-names remote-branch-names-noprefix")
+  else
+    reply=()
+  fi'
+
 # Zsh/Vim fg back-and-forth (I am using C-y in Vim, instead of C-z). {{{
 # Ctrl-Z does fg<enter>
 # via http://git.grml.org/?p=grml-etc-core.git;a=blob_plain;f=etc/zsh/zshrc;hb=HEAD
