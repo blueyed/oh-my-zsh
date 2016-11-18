@@ -939,9 +939,9 @@ compdef -e '_arguments "1: :(block_blink block underline_blink underline bar_bli
 _zsh_vim_mode_indicator () {
     if (( $_USE_XTERM_CURSOR_CODES )) || (( $+KONSOLE_DBUS_SESSION )); then
         if [ $KEYMAP = vicmd ]; then
-            _auto-my-set-cursor-shape block_blink
+            _auto-my-set-cursor-shape block
         else
-            _auto-my-set-cursor-shape bar_blink
+            _auto-my-set-cursor-shape bar
         fi
     elif [[ $TERM == xterm* ]]; then
         if [ $KEYMAP = vicmd ]; then
@@ -969,7 +969,7 @@ eval "zle-line-init     () { $functions[_zsh_vim_mode_indicator]; $functions[${w
 zle -N zle-keymap-select
 zle -N zle-line-init
 # Init.
-_auto-my-set-cursor-shape block_blink
+_auto-my-set-cursor-shape block
 
 # Manage my_confirm_client_kill X client property (used by awesome). {{{
 function get_x_focused_win_id() {
@@ -1006,7 +1006,7 @@ fi
 # Set block cursor before executing a program.
 add-zsh-hook preexec prompt_blueyed_cursorstyle_preexec
 function prompt_blueyed_cursorstyle_preexec() {
-  _auto-my-set-cursor-shape block_blink
+  _auto-my-set-cursor-shape block
 }
 # }}}
 
