@@ -378,7 +378,7 @@ vit () {(
   vi -c "tj $@"
   )}
 alias vdf="vit ~df"
-compdef -e '(( CURRENT > 2 )) && cd -q ${~words[2]} >/dev/null; _complete_tag; (( CURRENT > 2 )) && cd -q - >/dev/null' vit
+compdef -e 'if (( CURRENT > 3 )); then cd -q ${~words[2]} >/dev/null; fi; _complete_tag; if (( CURRENT > 3 )); then cd -q - >/dev/null; fi' vit
 # }}}
 
 # Restart network interface
