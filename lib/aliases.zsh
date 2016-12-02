@@ -264,10 +264,9 @@ alias ll1='tree --dirsfirst -ChFupDaL 1'
 alias ll2='tree --dirsfirst -ChFupDaL 2'
 alias ll3='tree --dirsfirst -ChFupDaL 3'
 
-# wget + dpatch
+# wget + patch
 wpatch() {
   PATCH_URL="$1"; shift
-  echo "wget $PATCH_URL -O- | zless | cat | patch -p1 $@"
   wget $PATCH_URL -O- | zless | patch -p1 "$@"
 }
 wless() {
