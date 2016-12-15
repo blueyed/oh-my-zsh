@@ -68,7 +68,9 @@ if [[ -d ~/.pyenv ]] && ! (( $+functions[zsh_setup_pyenv] )); then # only once!
   #       Would allow for using PYENV_VERSION in (Zsh) scripts always.
   #       But already done in ~/.profile?!
   prepend_path_if_not_in_already $PYENV_ROOT/bin
-  prepend_path_if_not_in_already $PYENV_ROOT/shims
+  # Prepend pyenv shims path always, it gets used also for lookup in
+  # VIRTUAL_ENV, and ~/.local/bin should not override it (e.g. for vint).
+  path=($PYENV_ROOT/shims $path)
 
   # Setup pyenv completions always.
   # (it is useful to have from the beginning, and using it via zsh_setup_pyenv
