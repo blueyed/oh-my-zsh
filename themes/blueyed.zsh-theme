@@ -148,7 +148,8 @@ setup_prompt_blueyed
 # Optional arg 1: "reset-prompt" if called via reset-prompt zle widget.
 prompt_blueyed_precmd () {
     # Get exit status of command first.
-    local -h save_exitstatus=$?
+    local -h exitstatus=$?
+    local -h reset_prompt=0
     typeset -g _ZSH_LAST_EXIT_STATUS _ZSH_LAST_PWD
 
     if [[ $1 == "reset-prompt" ]]; then
@@ -156,8 +157,10 @@ prompt_blueyed_precmd () {
             # cwd did not change, nothing to do.
             return
         fi
+        exitstatus=$_ZSH_LAST_EXIT_STATUS
     else
-        _ZSH_LAST_EXIT_STATUS=$save_exitstatus
+        _ZSH_PREVIOUS_EXIT_STATUS=$_ZSH_LAST_EXIT_STATUS
+        _ZSH_LAST_EXIT_STATUS=$exitstatus
     fi
     _ZSH_LAST_PWD=$PWD
 
@@ -168,7 +171,6 @@ prompt_blueyed_precmd () {
 
     # FYI: list of colors: cyan, white, yellow, magenta, black, blue, red, default, grey, green
     # See `colors-table` for a list.
-    local -h  exitstatus=$_ZSH_LAST_EXIT_STATUS
     local -h    normtext="%{$fg_no_bold[default]%}"
     local -h      hitext="%{$fg_bold[magenta]%}"
     local -h    venvtext="%{$fg_bold[magenta]%}"
@@ -472,7 +474,9 @@ prompt_blueyed_precmd () {
         else
             was_error=1
             if [[ $exitstatus == 130 ]]; then
-                disp="┻━┻"
+                if (( $exitstatus == $_ZSH_PREVIOUS_EXIT_STATUS )); then
+                    disp="┻━┻"
+                fi
             else
                 disp=" "
                 if (( exitstatus != 1 )); then
