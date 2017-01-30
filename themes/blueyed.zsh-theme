@@ -629,7 +629,9 @@ function +vi-git-stash() {
         return
     fi
 
-    if [[ -s ${vcs_comm[gitdir]}/refs/stash ]] ; then
+    # NOTE: in ~/src/awesome there was only .git/logs/refs/stash for some
+    #       reason, until I've stashed/unstashed something again.
+    if [[ -s ${vcs_comm[gitdir]}/refs/stash || -s ${vcs_comm[gitdir]}/logs/refs/stash ]] ; then
         local -a stashes
         # Get stashes as array, with subject and (relative) date per line.
         stashes=(${(ps:\n\n:)"$($_git_cmd --git-dir="${vcs_comm[gitdir]}" \
