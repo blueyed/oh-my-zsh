@@ -757,50 +757,103 @@ alias ggpull='git pull origin $(current_branch)'
 compdef -e 'words[1]=(git pull origin); service=git; (( CURRENT+=2 )); _git' ggpull
 
 ggpush() {
-  local -h remote branch
+  local -h remote branch branch_given remote_branch
   local -ha args git_opts
 
   # Get args (skipping options).
-  local using_force=0
+  local using_force=0 dryrun=0
   for i; do
     if [[ $i == -f ]]; then  # use --force-with-lease for -f.
       using_force=1
       i=--force-with-lease
     fi
     [[ $i == --force ]] && using_force=1
+    [[ $i == -n || $i == --dry-run ]] && dryrun=1
     [[ $i == -* ]] && git_opts+=($i) || args+=($i)
     [[ $i == -h ]] && { echo "Usage: ggpush [--options...] [remote (Default: tracking branch / github.user)] [branch (Default: current)]"; return; }
   done
 
   remote=${args[1]}
-  branch=${args[2]-$(current_branch)}
-  # XXX: may resolve to "origin/develop" for new local branches..
-  cfg_remote=${$($_git_cmd rev-parse --verify $branch@{upstream} \
-        --symbolic-full-name 2>/dev/null)/refs\/remotes\/}
-  cfg_remote=${cfg_remote%%/*}
+  if (( $#args > 1 )); then
+    branch_given=1
+    branch=${args[2]}
+    if [[ $branch == *:* ]]; then
+      remote_branch=${branch#*:}
+      branch=${branch%:*}
+    else
+      remote_branch=$branch
+    fi
+  else
+    branch_given=0
+    branch=$(current_branch)
+    if [[ "$branch" = master ]]; then
+      # TODO: allow to override?!  But not with -f, which is used already.
+      echo "Should not be used for master, exiting." >&2
+      return 1
+    fi
+    remote_branch=$branch
+  fi
 
   if [[ -z $remote ]]; then
-    if [[ -z $cfg_remote ]]; then
-      remote=$($_git_cmd config ggpush.default-remote)
-      if ! [[ -z $remote ]]; then
-        echo "Using ggpush.default-remote: $remote"
-      fi
+    local u=$(\git rev-parse --abbrev-ref '@{u}')
+    if [[ -n $u ]]; then
+      remote=${u%%/*}
+      echo "Using remote from upstream ($u)"
     fi
+  fi
+
+  if [[ -z $remote ]]; then
+    for cfg in my.ggpush-default-remote ggpush.default-remote branch.$branch.pushRemote remote.pushDefault; do
+      remote=$($_git_cmd config $cfg)
+      if [[ -n $remote ]]; then
+        echo "Using remote from $cfg: $remote"
+        if [[ $cfg == ggpush.default-remote ]]; then
+          echo "ggpush.default-remote is deprecated: use my.ggpush-default-remote instead:" >&2
+        fi
+        break
+      fi
+    done
+
     if [[ -z $remote ]]; then
-      remote=$($_git_cmd config github.user)
-      echo "Using remote for github.user: $remote"
-      if ! [[ -z $remote ]]; then
-        # Verify remote from github.user:
-        if ! $_git_cmd ls-remote --exit-code $remote &> /dev/null; then
-          echo "NOTE: remote for github.user does not exist ($remote). Forking.."
-          hub fork
+      local gh_user=$($_git_cmd config github.user)
+      if [[ -n $gh_user ]]; then
+        # echo "Using remote from github.user: $gh_user"
+        local remote=$($_git_cmd remote -v \
+          | awk '$2 ~ /github.com[:/]'$gh_user'/ && $3 == "(push)" {print $1; exit}')
+        if [[ -n "$remote" ]]; then
+          echo "NOTE: using (push) remote for github.user $gh_user: $remote"
+        else
+          # Verify remote from github.user:
+          if [[ "$($_git_cmd ls-remote --get-url $gh_user 2> /dev/null)" \
+              != "$gh_user" ]]; then
+            remote="$gh_user"
+            echo "Using remote from github.user: $gh_user"
+          else
+            echo "NOTE: remote for github.user does not exist ($gh_user)."
+            if (( $dryrun )); then
+              echo "dry-run: skipping 'hub fork' etc."
+            else
+              remote="$gh_user"
+              local repo="$($_git_cmd ls-remote --get-url origin)"
+              if [[ -n "$repo" ]]; then
+                repo=${repo##*/}
+              fi
+              if curl -s -I "https://github.com/$remote/$repo" \
+                  | head -n1 | grep -q 200; then
+                echo "Adding remote through hub: $remote"
+                hub remote add -p "$remote"
+              else
+                echo "Forking.."
+                hub fork
+              fi
+            fi
+          fi
         fi
       fi
       if [[ -z $remote ]]; then
-        echo "ERR: cannot determine remote."
+        echo "ERROR: cannot determine remote."
         return 1
       fi
-      echo "NOTE: using remote from github.user: $remote"
     fi
 
     # Ask for confirmation with '-f' and autodetected remote.
@@ -811,20 +864,22 @@ ggpush() {
       echo
     fi
 
-  elif [[ -z $cfg_remote ]]; then
-    # No remote given, and nothing configured: use `-u`.
-    echo "NOTE: Using '-u' to set upstream."
-    if (( ${git_opts[(i)-u]} > ${#git_opts} )); then
+  elif (( ${git_opts[(i)-u]} > ${#git_opts} )); then
+    if [[ -z $($_git_cmd rev-parse --verify $branch@{upstream} \
+        --symbolic-full-name --abbrev-ref 2>/dev/null) ]]; then
+      # No remote given, and nothing configured: use `-u`.
+      echo "NOTE: Using '-u' to set upstream."
       git_opts+=(-u)
     fi
   fi
 
-  echo "Pushing to $remote:$branch.."
-  [[ -z $branch ]] && { echo "No current branch (given or according to 'current_branch').\nAre you maybe in a rebase, or not in a Git repo?"; return 1; }
+  if [[ -z $branch ]]; then
+    echo "No current branch (given or according to 'current_branch').\nAre you maybe in a rebase, or not in a Git repo?"
+    return 1
+  fi
 
-  # TODO: git push ${1-@{u}} $branch
   local -a cmd
-  cmd=(git push $git_opts $remote $branch)
+  cmd=(git push $git_opts $remote $branch:$remote_branch)
   echo $cmd
   $=cmd
 }
