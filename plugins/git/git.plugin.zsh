@@ -377,9 +377,31 @@ gbmcleanup() {
 alias gbl='git blame'
 
 alias gc='git commit -v'
+alias gC='git commit'  # For large diffs.
 alias gca='git commit -v -a'
-alias gcf='git commit --fixup'
-alias gcs='git commit --squash'
+
+# Helper to setup completion for functions, e.g.
+# "complete_function gcf git commit --fixup" will setup completion for
+# "gcf" => "git commit --fixup".
+complete_function() {
+  local f=$1; shift
+  compdef -e "words=($* \"${(@)words[2,-1]}\"); ((CURRENT+=$(( $#*-1 )))); _normal" $f
+}
+
+gcf() {
+  typeset -a opts
+  while [[ $1 == -* ]]; do opts+=($1); shift; done
+  gc $opts --fixup "${@:-HEAD}"
+}
+complete_function gcf git commit --fixup
+
+gcs() {
+  typeset -a opts
+  while [[ $1 == -* ]]; do opts+=($1); shift; done
+  gc $opts --squash "${@:-HEAD}"
+}
+complete_function gcs git commit --squash
+
 gcl() {
   hub clone $@ || return
 
