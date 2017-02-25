@@ -18,24 +18,56 @@ alias gae='git add --edit'
 gb() {
   setopt localoptions rcexpandparam
   local refs limit=100
-  if [[ -z $1 ]]; then
+
+  if [[ $# == 0 ]]; then
     refs=(refs/heads)
-  elif [[ $# == 1 ]]; then
-    if [[ $1 == '-r' ]]; then
-      refs=(refs/remotes)
-    elif [[ $1 == '-a' ]]; then
-      refs=(refs/heads refs/remotes)
-    elif [[ $1 == <-> ]]; then
-      # Display last X branches only.
-      refs=(refs/heads)
-      limit=$1
-    elif [[ $1 == '--no-merged' ]]; then
+  else
+    # Parse -r and -a for special handling.
+    local parsed_opts
+    zparseopts -D -E -a parsed_opts r a
+
+    # Parse all other args/opts.
+    typeset -a opts args
+    for i do
+      if [[ ${i[1]} == '-' ]]; then
+        opts+=($i)
+      else
+        args+=($i)
+      fi
+    done
+
+    if (( $#parsed_opts )); then
+      if (( $parsed_opts[(I)-r] )); then
+        refs=(refs/remotes)
+      elif (( $parsed_opts[(I)-a] )); then
+        refs=(refs/heads refs/remotes)
+      fi
+    fi
+
+    if (( $opts[(I)(--no-merged|--merged)] )); then
       # Pass options to git-branch, e.g. '--no-merged' and use resulting refs.
-      refs=(refs/heads/${(@)$($_git_cmd branch $1)})
+      refs=(refs/heads/${(@)$($_git_cmd branch --list $opts | sed -E 's/^[* ] //')})
+    fi
+
+    # If there is only one number arg, and no pass-through option (e.g. "-D"),
+    # then use that as a limit.
+    if ! (( $#opts )) && (( $#args == 1 )); then
+      if [[ $args[1] == <-> ]]; then
+        # Display last X branches only.
+        if [[ -z $refs ]]; then
+          refs=(refs/heads)
+        fi
+        limit=$args[1]
+      fi
     fi
   fi
 
-  if [[ -n $refs ]]; then
+  if [[ -z $refs ]]; then
+    git branch "$@"
+  else
+    # XXX: there's a problem with ANSI escape codes, which get considered by
+    # zformat, although invisible.
+
     local color_object=${(%):-'%F{yellow}'}
     local color_date=${(%):-'%F{cyan}'}
     local color_subject=${(%):-'%B%f'}
@@ -49,7 +81,7 @@ gb() {
     info_string=(
       "%(refname:short)"
       "%(authorname)"
-      "${color_date}%(committerdate:relative)${reset_color}"
+      "${color_date}%(committerdate:short)${reset_color}"
       "${color_subject}%(subject)${reset_color}"
       "%(objectname:short)"
     )
@@ -58,7 +90,6 @@ gb() {
     for b in ${(f)"$($_git_cmd for-each-ref --sort=-committerdate $refs \
         --format="\0${(j:\0:)info_string}" --count=$limit)"}; do
       b=(${(s:\0:)b})
-      line=""
 
       # Describe object name (and keep orig sha for comparison with prev_sha).
       b[6]=${b[5]}
@@ -85,14 +116,13 @@ gb() {
       split=(${(s:\0:)line})
       format_lines+=("${(j:\0:)split[1,-2]}")
     done
-    local col=1
 
-    local maxlen
-    while true; do
+    local col maxlen
+    # Format first two columns (branch and subject) using zformat.
+    for col in {1..2}; do
       before=($format_lines)
       escaped_lines=()
 
-      local linenum=1
       if (( COLUMNS > 100 )); then
         (( $col == 1 )) && maxlen=50 || maxlen=30
       else
@@ -108,14 +138,9 @@ gb() {
         left=${left//\0/\\0}
         right=${(j:\0:)split[$((col+1)),-1]}
         escaped_lines+=("$left:$right")
-
-        (( linenum++ ))
       done
 
       zformat -a format_lines "\0" $escaped_lines
-      if (( ++col >= $#split )); then
-        break
-      fi
     done
 
     (( $#format_lines )) || return
@@ -153,15 +178,11 @@ gb() {
         split[1]="${color_local}$split[1]"
       fi
 
-      # if [[ ${format_lines[$line]} != "skipped" ]]; then
       lines[$i]=${(j: :)split}
     done
 
     # Display it using "less", but only to cut at $COLUMNS.
-    echo ${${(j:\n:)lines}} \
-      | less --no-init --chop-long-lines --QUIT-AT-EOF
-  else
-    git branch "$@"
+    echo ${${(j:\n:)lines}} | less --no-init --chop-long-lines --QUIT-AT-EOF
   fi
 }
 compdef -e 'words=(git branch "${(@)words[2,-1]}"); ((CURRENT++)); _normal' gb
