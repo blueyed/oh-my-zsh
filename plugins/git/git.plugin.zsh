@@ -517,7 +517,9 @@ alias gdtc='git difftool --cached'
 alias gdtd='git difftool --dir-diff --tool=bc'
 
 alias gf='git fetch'
-alias gfa='git fetch --all --prune'
+alias gF='git fetch --prune'
+alias gfa='git fetch --all'
+alias gFa='git fetch --all --prune'
 
 alias gl='git log --abbrev-commit --decorate --submodule=log --pretty="format:%C(yellow)%h%C(red)%d%C(reset) %s %C(green)(%cr) %C(blue)<%an>"'
 alias glg='gl --graph'
