@@ -834,6 +834,7 @@ ggpushb() {
   ggpush "$@" && hub browse
 }
 compdef _git ggpushb=git-push
+alias gpb="ggpushb -u"
 
 # Setup wrapper for git's editor. It will use just core.editor for other
 # files (e.g. patch editing in `git add -p`).
