@@ -13,6 +13,10 @@ alias ga='git add'
 alias gap='git add --patch'
 alias gae='git add --edit'
 
+remove_ansi_codes() {
+  echo "$@" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+}
+
 # Function for "git branch", handling the "list" case, by sorting it according
 # to committerdate, and displaying it.
 gb() {
