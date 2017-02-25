@@ -227,7 +227,7 @@ gbmcleanup() {
     echo "$0 [-i] [-f] [-n] [-l] [-m] [-v] [-o branch]"
     echo " -l: list"
     echo " -n: dry run"
-    echo " -i: interactive"
+    echo " -i: interactive (show diff for each branch, asking for confirmation)"
     echo " -f: force"
     echo " -m: test for empty merges"
     echo " -v: verbose"
@@ -300,10 +300,10 @@ gbmcleanup() {
           # Check for cherry-picks, that cause a conflict with merge-tree, but
           # should be OK.
           rev_list=(${(f)"$($_git_cmd rev-list --abbrev-commit "$merge_base..HEAD")"})
-          branch_diff=$($_git_cmd diff "$merge_base" $b)
+          branch_diff=$($_git_cmd diff "$merge_base" $b --)
           for i in $rev_list; do
             if [[ -z "${rev_diff[$i]}" ]]; then
-              rev_diff[$i]="$(git diff "$i^" "$i")"
+              rev_diff[$i]="$(git diff "$i^" "$i" --)"
             fi
             if [[ "$rev_diff[$i]" == "$branch_diff" ]]; then
               no_diff+=($b "cherry-picked in $($_git_cmd name-rev $i)")
@@ -326,24 +326,29 @@ gbmcleanup() {
     fi
   fi
 
+  if (( $#merged )); then
+    echo ${(%):-"%BMerged branches:%b"} >&2
+    for b in $merged; do
+      echo "$branch_color$b$reset_color"
+    done
+  fi
+  if (( $#no_diff )); then
+    echo ${(%):-"%BBranches with empty merges:%b"} >&2
+    for b in ${(k)no_diff}; do
+      echo "$branch_color$b$reset_color: $no_diff[$b]"
+    done
+  fi
   if (( $list )); then
-    if (( $#merged )); then
-      echo ${(%):-"%BMerged branches:%b"} >&2
-      for b in $merged; do
-        echo "$branch_color$b$reset_color"
-      done
-    fi
-    if (( $#no_diff )); then
-      echo ${(%):-"%BBranches with empty merges:%b"} >&2
-      for b in ${(k)no_diff}; do
-        echo "$branch_color$b$reset_color: $no_diff[$b]"
-      done
-    fi
     return
   fi
   merged+=(${(k)no_diff})
   if ! (( $#merged )); then
     return
+  fi
+
+  if ! (( $interactive )); then
+    printf "Delete? (y/N) "
+    read -q || { echo; return }; echo
   fi
 
   cmd=(git branch -D)
@@ -352,10 +357,10 @@ gbmcleanup() {
   fi
 
   if (( $interactive )); then
-    echo "$#merged branches to process: " $merged
+    echo "$#merged branches to process: $merged"
 
     for b in $merged; do
-      view +'set ft=diff' =(echo "== $b =="; git show $b)
+      view '+set ft=diff' =(echo "== $b =="; git show $b)
       printf "Delete? "
       read -q || { echo; continue }; echo
       $cmd $b
