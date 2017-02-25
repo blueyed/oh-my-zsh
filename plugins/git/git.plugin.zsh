@@ -428,6 +428,21 @@ alias gcm='noglob _git_command_with_message_and_files "git commit"'
 # Amend directly (with message): no glob expansion and error on non-match.
 alias gcma='noglob _git_command_with_message "git commit --amend"'
 
+# Commit index after creating a branch based on the msg's first line.
+gcobucm() {
+  # Only use first line of arguments
+  setopt localoptions errreturn
+  if git diff --cached --quiet --exit-code; then
+    echo "error: nothing to commit in the index"; return 1
+  fi
+  local msg="$@"
+  local lines=(${(@f)msg})
+  local firstline=$lines[1]
+  local branch="${${${${${${firstline:gs/: /-}:gs/ /-}:gs~/~-}:gs/:/-/}:gs/*/star/}:l}"
+  gcobu $branch || return
+  gcm $msg
+}
+
 gco() {
   # Safety net for accidental "gco ." (instead of "gco -").
   if (( ${@[(I).]} )); then
