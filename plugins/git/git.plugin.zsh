@@ -377,7 +377,7 @@ alias gca='git commit -v -a'
 alias gcf='git commit --fixup'
 alias gcs='git commit --squash'
 gcl() {
-  git clone $@ || return
+  hub clone $@ || return
 
   # Test if last arg is available as dir.
   local last=$@[$#]
