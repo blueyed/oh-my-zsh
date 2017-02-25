@@ -396,24 +396,37 @@ compdef _git gcl=git-clone
 # Helper: call a given command ($1) with (optional) files (popped from the
 # end).  This allows for "gcm 'commit message' file1 file2", but also just
 # "gcm message".
-command_with_files() {
-  local cmd=$1; shift
-  # Pop existing files/dirs from the end of args.
+_git_command_with_message_and_files() {
+  local cmd files
+  cmd=($=1); shift
   files=()
-  while (( $# > 1 )) && [[ -e $@[$#] ]]; do
-    files+=($@[$#])
-    shift -p
-  done
-  $=cmd "$*" $files
+  if [[ $1 == *" "* ]]; then
+    # Pop existing files/dirs from the end of args (but only if the message is
+    # quoted and contains space.
+    # This is meant to skip "Makefile" with "gcm Improve Makefile".
+    while (( $# > 1 )) && [[ -e $@[$#] ]]; do
+      files+=($@[$#])
+      shift -p
+    done
+  fi
+  cmd+=(-m "$*")
+  $cmd $files
+}
+_git_command_with_message() {
+  local cmd msg
+  cmd=($=1); shift
+  if (( $# )); then
+    cmd+=(-m "$*")
+  else
+    cmd+=(--reuse-message=HEAD)
+  fi
+  $cmd
 }
 
 # Commit with message: no glob expansion and error on non-match.
-# gcm() { git commit -m "${(V)*}" }
-alias gcm='noglob _nomatch command_with_files "git commit -m"'
+alias gcm='noglob _git_command_with_message_and_files "git commit"'
 # Amend directly (with message): no glob expansion and error on non-match.
-# gcma() { git commit --amend -m "${(V)*}" }
-# gcma() { git commit --amend -m "$*" }
-alias gcma='noglob _nomatch command_with_files "git commit --amend -m"'
+alias gcma='noglob _git_command_with_message "git commit --amend"'
 
 gco() {
   # Safety net for accidental "gco ." (instead of "gco -").
