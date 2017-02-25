@@ -571,12 +571,13 @@ alias grv='git remote -v'
 # or submodule. NOTE: see also `RR`.
 alias grt='cd $($_git_cmd rev-parse --show-toplevel || echo ".")'
 
-alias gsh='git show'
+alias gsh='git show --stat -p'
 alias gsm='git submodule'
 alias gsms='git submodule summary'
 alias gsmst='git submodule status'
-alias gss='git status -s'
-alias gst='git status'
+alias gss='git --no-pager status -s'
+alias gst='git --no-pager status --untracked-files=no'
+alias gstu='git --no-pager status --untracked-files=normal'
 
 # git-stash.
 alias gsts='git stash show --text -p --stat'
