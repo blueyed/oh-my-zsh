@@ -445,16 +445,17 @@ gcobucm() {
 
 gco() {
   # Safety net for accidental "gco ." (instead of "gco -").
-  if (( ${@[(I).]} )); then
+  # Could also kick in in case of dir names, when a branch was meant?!
+  if (( ${@[(I).]} )) && ! (( ${@[(I)-p]} )); then
     echo "WARN: 'git checkout .' will remove local changes."
     echo -n "Continue? [y/N] "
-    read -q || return 1
+    read -q || { echo; return 1 }; echo
     echo
   fi
   git checkout "$@"
 }
 # Setup proper zstyle completion context for "git-checkout".
-compdef -e 'words[1]=git-checkout; service=git-checkout; _git "$@"' gco
+compdef -e 'words=(git checkout "${(@)words[2,-1]}"); ((CURRENT++)); _normal' gco
 
 alias gcom='git checkout master'
 alias gcoom='git checkout origin/master'
