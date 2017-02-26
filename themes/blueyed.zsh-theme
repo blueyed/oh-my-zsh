@@ -875,6 +875,7 @@ function +vi-git-st() {
 # Used in ~/.dotfiles/oh-my-zsh/themes/blueyed.zsh-theme / my-set-cursor-shape
 # and Vim.  For tmux, it will use Ss/Se from terminal-overrides.
 if is_urxvt || [[ -n $TMUX ]] || [[ $TERM == screen-256color ]] \
+  || [[ -n "$VTE_VERSION" ]] \
   || ([[ $TERM == xterm* ]] && [[ $COLORTERM != lilyterm ]] \
       && [[ -z $KONSOLE_DBUS_SESSION ]] && ! is_gnome_terminal); then
     _USE_XTERM_CURSOR_CODES=1
