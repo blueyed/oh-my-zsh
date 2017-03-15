@@ -380,12 +380,12 @@ alias gc='git commit -v'
 alias gC='git commit'  # For large diffs.
 alias gca='git commit -v -a'
 
-# Helper to setup completion for functions, e.g.
+# Helper to setup completion for functions.
 # "complete_function gcf git commit --fixup" will setup completion for
 # "gcf" => "git commit --fixup".
 complete_function() {
   local f=$1; shift
-  compdef -e "words=($* \"${(@)words[2,-1]}\"); ((CURRENT+=$(( $#*-1 )))); _normal" $f
+  compdef -e "words[1]=( ${${(qq)@}} ); (( CURRENT += $# - 1 )); _normal" $f
 }
 
 gcf() {
