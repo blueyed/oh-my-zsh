@@ -85,7 +85,7 @@ gb() {
     info_string=(
       "%(refname:short)"
       "%(authorname)"
-      "${color_date}%(committerdate:short)${reset_color}"
+      "${color_date}%(committerdate:format:%Y-%m-%d %H:%M)${reset_color}"
       "${color_subject}%(subject)${reset_color}"
       "%(objectname:short)"
     )
@@ -483,6 +483,13 @@ gco() {
 # Setup proper zstyle completion context for "git-checkout".
 compdef -e 'words=(git checkout "${(@)words[2,-1]}"); ((CURRENT++)); _normal' gco
 
+# Special completion of "aliases" (only branches).
+# Use a function instead of alias (for nocompletealiases).
+gcob() { git checkout "$@" }
+compdef -e 'f=__git_recent_branches; (( $+functions[$f] )) || _git; $f' gcob
+gcobn() { git checkout "$@" }
+compdef -e 'f=__git_branch_names; (( $+functions[$f] )) || _git; $f' gcobn
+
 alias gcom='git checkout master'
 alias gcoom='git checkout origin/master'
 alias gcoum='git checkout upstream/master'
@@ -494,7 +501,7 @@ gcobo() {
   [[ -z $1 ]] && { echo "Branch name missing to create from origin/master."; return 1; }
   git checkout --no-track -b $1 origin/master
 }
-gcobu() {
+gcobum() {
   [[ -z $1 ]] && { echo "Branch name missing to create from upstream/master."; return 1; }
   git checkout --no-track -b $1 upstream/master
 }
@@ -546,13 +553,15 @@ alias gf='git fetch'
 alias gF='git fetch --prune'
 alias gfa='git fetch --all'
 alias gFa='git fetch --all --prune'
+alias gfo='git fetch origin'
 
 alias gl='git log --abbrev-commit --decorate --submodule=log --pretty="format:%C(yellow)%h%C(red)%d%C(reset) %s %C(green)(%cr) %C(blue)<%an>"'
 alias glg='gl --graph'
 alias gls='gl --graph --stat'
 alias glp='gls -p --pretty=fuller'
+alias glpg='glp -G'
 # '-m --first-parent' shows diff for first parent.
-alias glpm='gl -p -m --first-parent'
+alias glpm='gl -p --pretty=fuller -m --first-parent'
 
 # `git log` against upstream.
 alias glu='git log --stat @{u}...'
@@ -564,13 +573,24 @@ alias glsu='git ls-files -o --exclude-standard'
 alias gm='git merge'
 alias gmt='git mergetool --no-prompt'
 gp() {
-  # git-push: use "--force-with-lease" for "-f" (instead of "--force").
-  local opts force_idx=$(( ${@[(I)-f]} ))
-  opts=($@)
-  if (( force_idx )); then
-    opts[$force_idx]="--force-with-lease"
-  fi
-  git push $opts
+  # git-push
+  #  - use "--force-with-lease" for "-f" (instead of "--force")
+  #  - handle "-c" options (they need to be passed before "push")
+  local opt
+  local -a git_opts push_opts
+  while (( ${#@} )); do
+    opt=$1
+    shift
+    if [[ "$opt" == '-c' ]]; then
+      git_opts=(-c $1)
+      shift
+    elif [[ "$opt" == '-f' ]]; then
+      push_opts+=('--force-with-lease')
+    else
+      push_opts+=($opt)
+    fi
+  done
+  git $git_opts push $push_opts
 }
 compdef _git gp=git-push
 alias gpl='git pull --ff-only'
@@ -579,11 +599,16 @@ alias gpoat='git push origin --all && git push origin --tags'
 alias gup="git -c rebase.autoStash=true pull --rebase"
 
 # Rebase
+alias grb='git rebase'
+alias grba='git rebase --abort'
+alias grbc='git rebase --continue'
+alias grbom='git rebase origin/master'
+alias grbu='git rebase $(git_upstream_master)'
+# Interactive rebase
 alias grbi='git rebase -i --autostash'
 alias grbiom='grbi origin/master'
-alias grbium='grbi upstream/master'
-alias grbc='git rebase --continue'
-alias grba='git rebase --abort'
+alias grbiu='grbi $(git_upstream_master)'
+alias grbimb='grbi $(git merge-base --fork-point master)'
 
 grh() {
   git reset "${@:-HEAD}"
@@ -606,12 +631,41 @@ alias gst='git --no-pager status --untracked-files=no'
 alias gstu='git --no-pager status --untracked-files=normal'
 
 # git-stash.
-alias gsts='git stash show --text -p --stat'
-alias gsta='git stash'
-alias gstas='git stash -k'
+gsts() {
+  local stash
+  if [[ -n "$1" ]]; then
+    [[ "$1" = <-> ]] && skip=$1 || skip=${${1#stash@\{}%\}}
+  else
+    skip=0
+  fi
+  # Use "list" to get the stash subject.
+  $_git_cmd stash list --text -p --stat -1 --skip=$skip $stash
+}
+compdef -e 'words=(git stash show "${(@)words[2,-1]}"); ((CURRENT+=2)); _normal' gsts
+
+_update_git_ctags() {
+  ret=${1:-$?}
+  if [[ "$ret" = 0 ]]; then
+    local ctags_hook="$($_git_cmd rev-parse --git-path hooks/ctags)"
+    if [[ -x "$ctags_hook" ]]; then
+      echo "Updating ctags.."
+      $ctags_hook
+    fi
+  fi
+  return "$ret"
+}
+gsta() {
+  $_git_cmd stash "$@"
+  local ret=$?
+  if [[ -z "$1" || "$1" == 'pop' || "$1" == 'apply' ]]; then
+    _update_git_ctags $ret
+  fi
+  return $ret
+}
+complete_function gsta git stash
 alias gstl='git stash list --format="%C(yellow)%gd: %C(reset)%gs %m%C(bold)%cr"'
 
-# 'git stash pop', which warns when using it on a different branch.
+# 'git stash pop', which warns when using it on a different branch/commit.
 gstp() {
   local log stash_ref
   if [[ "$1" = <-> ]] || [[ -z "$1" ]]; then
@@ -624,17 +678,32 @@ gstp() {
     return 1
   }
   local current_branch="$(current_branch)"
-  if ! [[ $log =~ "^(WIP on|On) ${current_branch}" ]]; then
+  local stash_branch="${${log##(WIP on|On) }%%:*}"
+  if [[ "$stash_branch" == '(no branch)' ]]; then
+    # Get commit from log message ("WIP on (no branch): c48d405 Change …")
+    stash_branch="${${log##*: }%% *}"
+  fi
+  if [[ "$current_branch" != "$stash_branch" ]]; then
     echo "Warning: stash appears to be for another branch."
-    echo "Current: ${current_branch}"
+    echo "Current: $current_branch, stash: $stash_branch"
     echo "Log: $log"
-    echo -n "Continue? "
+    echo -n "Continue? (y/N) "
     read -q || { echo; return }; echo
   fi
-  git stash pop -q $stash_ref
-  git status --untracked-files=no
+  output="$($_git_cmd stash pop --index $stash_ref 2>&1)"
+  local ret=$?
+  if (( ret == 0 )); then
+    # Simulate -q on success, but display the "Droppped" line/ref.
+    # hash="$($_git_cmd show-ref --abbrev -s $stash_ref)"
+    echo "$output" | \grep --color=no '^Dropped'
+  else
+    echo "$output"
+  fi
+  _update_git_ctags $ret
+  $_git_cmd status --untracked-files=no
+  return $ret
 }
-compdef -e 'words=(git stash pop "${(@)words[2,-1]}"); ((CURRENT+=2)); _normal' gstp
+complete_function gstp git stash pop
 
 # git-up and git-reup from ~/.dotfiles/usr/bin
 compdef _git git-up=git-fetch
@@ -673,7 +742,7 @@ gsma() {
     $_git_cmd diff --exit-code $gitroot/.gitmodules > /dev/null || { echo ".gitmodules is not clean."; return 2 ; }
   fi
   echo git submodule add "$@" "$sm" "$smpath"
-  git submodule add "$@" "$sm" "$smpath" && \
+  hub submodule add "$@" "$sm" "$smpath" && \
   summary=$($_git_cmd submodule summary "$smpath") && \
   summary=( ${(f)summary} ) && \
   $_git_cmd commit -m "Add submodule $smpath @${${${(ps: :)summary[1]}[3]}/*.../}"$'\n\n'"${(F)summary}" "$smpath" $gitroot/.gitmodules && \
@@ -739,7 +808,8 @@ gswitch() {
   if [[ $output == "error: Your local changes"* ]]; then
     $_git_cmd stash save \
       && $_git_cmd checkout $1 \
-      && $_git_cmd stash pop
+      && $_git_cmd stash pop -q
+    $_git_cmd status --untracked-files=no
   fi
 }
 compdef _git gswitch=git-checkout
@@ -761,14 +831,18 @@ alias gsd='git svn dcommit'
 # Using '--quiet' with 'symbolic-ref' will not cause a fatal error (128) if
 # it's not a symbolic ref, but in a Git repo.
 function current_branch() {
+  local ret
+  get_current_branch && echo "$ret"
+}
+function get_current_branch() {
   local ref
   ref=$($_git_cmd symbolic-ref --quiet HEAD 2> /dev/null)
-  local ret=$?
-  if [[ $ret != 0 ]]; then
-    [[ $ret == 128 ]] && return  # no git repo.
-    ref=$($_git_cmd rev-parse --short HEAD 2> /dev/null) || return
+  local _ret=$?
+  if [[ $_ret != 0 ]]; then
+    [[ $_ret == 128 ]] && return $_ret  # no git repo.
+    ref=$($_git_cmd rev-parse --short HEAD 2> /dev/null) || return $?
   fi
-  echo ${ref#refs/heads/}
+  ret=${ref#refs/heads/}
 }
 
 function current_repository() {
@@ -780,7 +854,7 @@ function current_repository() {
 
 # these aliases take advantage of the previous function
 alias ggpull='git pull origin $(current_branch)'
-compdef -e 'words[1]=(git pull origin); service=git; (( CURRENT+=2 )); _git' ggpull
+compdef -e 'words=(git pull origin "${(@)words[2,-1]}"); ((CURRENT+=2)); _normal' ggpull
 
 ggpush() {
   local -h remote branch branch_given remote_branch
@@ -825,6 +899,7 @@ ggpush() {
     if [[ -n $u ]]; then
       remote=${u%%/*}
       echo "Using remote from upstream ($u)"
+      remote_branch=${u##*/}
     fi
   fi
 
@@ -915,7 +990,7 @@ ggpushb() {
   ggpush "$@" && hub browse
 }
 compdef _git ggpushb=git-push
-alias gpb="ggpushb -u"
+alias gpb='ggpushb --set-upstream'
 
 # Setup wrapper for git's editor. It will use just core.editor for other
 # files (e.g. patch editing in `git add -p`).
