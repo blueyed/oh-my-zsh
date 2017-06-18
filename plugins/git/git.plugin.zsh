@@ -464,7 +464,7 @@ gcobucm() {
   local msg="$@"
   local lines=(${(@f)msg})
   local firstline=$lines[1]
-  local branch="${${${${${${firstline:gs/: /-}:gs/ /-}:gs~/~-}:gs/:/-/}:gs/*/star/}:l}"
+  local branch="${${${${${${firstline:gs/: /-}:gs/ /_}:gs~/~-}:gs/:/-/}:gs/*/star/}:l}"
   gcobu $branch || return
   gcm $msg
 }
