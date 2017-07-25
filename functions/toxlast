@@ -1,0 +1,8 @@
+# Run tox with the last modified env (looking at the nearest .tox dir).
+local lastenv cmd
+setopt localoptions extendedglob
+local toxdir=((../)#.tox(Y1))
+lastenv=($toxdir/*~*/(dist|log)(om[1]:t))
+cmd=(tox -e $lastenv "$@")
+echo "=> $cmd"
+$=cmd
