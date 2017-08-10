@@ -720,17 +720,9 @@ dG() {
   done
 }
 
-# Custom command modifier to not error on non-matches; similar to `noglob`.
-_nomatch () {
-  setopt localoptions nonomatch
-  local cmd=$1; shift
-  # NOTE: not using 'command' to make it work with functions.
-  # NOTE: quotes required with 'cmd foo: (bar)'
-  # command $cmd ${~@}
-  $cmd "${~@}"
-}
-compdef _precommand _nomatch
-[[ -n $commands[ag] ]] && alias ag='_nomatch ag --smart-case'
+alias ag='noglob ag --smart-case'
+# Wrapper script with default options in ~/.dotfiles/usr/bin/rg.
+alias rg='noglob rg'
 
 
 # Make aliases work with sudo; source: http://serverfault.com/a/178956/14449
