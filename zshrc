@@ -971,11 +971,21 @@ export DEBEMAIL='ubuntu@thequod.de'
 
 
 reloadzsh() {
+  if [[ -n $jobstates ]]; then
+    echo 'Running jobs, aborting..'; return 1
+  fi
+
   # Delete widgets to avoid recursion error via zsh-syntax-highlighting.
   zle -D zle-keymap-select
   zle -D zle-line-finish
   zle -D zle-line-init
 
+  # Hide assert.
+  if (( $+functions[zsh_setup_pyenv] )); then
+    unfunction zsh_setup_pyenv
+  fi
+
+  # XXX: re-sourcing zshrc mocks with display: putting "reset" before is also problematic.
   source ~/.zshenv
   ZSHRC_EXEC_COMMAND= source ~/.zshrc
 }
