@@ -375,7 +375,7 @@ prompt_blueyed_precmd () {
 
     # virtualenv
     # TODO: needs to be run on chpwd for "pyenv local", too.
-    local venv_found
+    local venv_found=0
     if [[ -n $VIRTUAL_ENV ]]; then
         if [[ -d $VIRTUAL_ENV ]]; then
             if ! (( $path[(I)$VIRTUAL_ENV/bin] )); then
@@ -384,7 +384,7 @@ prompt_blueyed_precmd () {
                 local v
                 for v in ${(s~:~)_zsh_cache_pwd[pyenv_version]}; do
                     if [[ ${VIRTUAL_ENV##*/} == $v ]]; then
-                        prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/})")  # ⓔ
+                        prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/} (pyenv))")  # ⓔ
                         venv_found=1
                         break
                     fi
@@ -394,10 +394,27 @@ prompt_blueyed_precmd () {
                     prompt_extra+=("${venvtext}(${VIRTUAL_ENV##*/}(NOT_IN_PATH))")
                 fi
             else
-                local venv=${VIRTUAL_ENV##*/}
-                if [[ ${${VIRTUAL_ENV%/*}##*/} == .tox ]]; then
-                    venv="tox:$venv"
+                local venv
+                if [[ "${VIRTUAL_ENV:t}" == .venv ]]; then
+                    venv=${VIRTUAL_ENV:h:t}
+                else
+                    venv=${VIRTUAL_ENV##*/}
+                    if [[ ${${VIRTUAL_ENV%/*}##*/} == .tox ]]; then
+                        venv="tox:$venv"
+                    fi
                 fi
+
+                # Append Python version (from "python -V").
+                # This is useful in case of pyenv_version being different.
+                local python_version
+                if ! (( $+_zsh_cache_virtualenv_version[$VIRTUAL_ENV] )); then
+                    _zsh_cache_virtualenv_version[$VIRTUAL_ENV]="${${:-"$(python -V 2>&1)"}#Python }"
+                fi
+                python_version=$_zsh_cache_virtualenv_version[$VIRTUAL_ENV]
+                if [[ "$venv" != "$python_version" ]]; then
+                    venv+="@$python_version"
+                fi
+
                 prompt_extra+=("${venvtext}($venv)")
             fi
         else
@@ -419,12 +436,12 @@ prompt_blueyed_precmd () {
     fi
     local pyenv_prompt
     if [[ $pyenv_version != ${_zsh_cache_pwd[pyenv_global]} ]]; then
-        if (( $venv_found )) && [[ ${VIRTUAL_ENV##*/} == $pyenv_version ]]; then
+        if (( venv_found )) && [[ ${VIRTUAL_ENV##*/} == $pyenv_version ]]; then
             pyenv_version=✓
         elif [[ -z $pyenv_version ]]; then
             pyenv_version=☓
         fi
-        pyenv_prompt=("${normtext}🐍 ${pyenv_version}")
+        pyenv_prompt=("${normtext}${_prompt_glyph[🐍]}${pyenv_version}")
         RPS1_list+=($pyenv_prompt)
     fi
 
