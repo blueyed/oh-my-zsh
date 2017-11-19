@@ -13,8 +13,9 @@ alias ga='git add'
 alias gap='git add --patch'
 alias gae='git add --edit'
 
-remove_ansi_codes() {
-  echo "$@" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+# Optimized version of remove_ansi_codes (using Zsh features, no subshell).
+get_remove_ansi_codes() {
+  ret=${1//\[([0-9][0-9](;[0-9][0-9])#)#[mK]/}
 }
 
 # Function for "git branch", handling the "list" case, by sorting it according
@@ -91,16 +92,27 @@ gb() {
     )
     local my_name="$($_git_cmd config user.name)"
     local b
-    for b in ${(f)"$($_git_cmd for-each-ref --sort=-committerdate $refs \
-        --format="\0${(j:\0:)info_string}" --count=$limit)"}; do
+    local -a branch_info branch_refs branches_describe
+    branch_info=(${(f)"$($_git_cmd for-each-ref --sort=-committerdate $refs \
+      --format="\0${(j:\0:)info_string}" --count=$limit)"})
+    for b in $branch_info; do
       b=(${(s:\0:)b})
+      branch_refs+=($b[5])
+    done
+
+    # Do a single call to git-describe.
+    branches_describe=(${(f)"$($_git_cmd describe --contains --always $branch_refs)"})
+
+    local author_name
+    for idx in {1..$#branch_info}; do
+      b=(${(s:\0:)branch_info[idx]})
 
       # Describe object name (and keep orig sha for comparison with prev_sha).
       b[6]=${b[5]}
-      b[5]="${color_object}$($_git_cmd describe --contains --always $b[5])${reset_color}"
+      b[5]="${color_object}${branches_describe[$idx]}${reset_color}"
 
       # Decorate or remove author name.
-      local author_name=$b[2]
+      author_name=$b[2]
       b=($b[1] $b[3,-1])
       if [[ $author_name != $my_name ]]; then
         b[3]="$b[3] (${color_author}$author_name${reset_color})"
@@ -121,7 +133,7 @@ gb() {
       format_lines+=("${(j:\0:)split[1,-2]}")
     done
 
-    local col maxlen
+    local col maxlen ret
     # Format first two columns (branch and subject) using zformat.
     for col in {1..2}; do
       before=($format_lines)
@@ -134,7 +146,8 @@ gb() {
       fi
       for line in $format_lines; do
         split=(${(s:\0:)line})
-        if (( ${#:-"$(remove_ansi_codes ${split[$col]})"} > $maxlen )); then
+        get_remove_ansi_codes ${split[$col]}
+        if (( $#ret > $maxlen )); then
           split[$col]="__skipped_$(printf '.%.0s' {1..$((maxlen-10))})"
         fi
         # Escape left side.
