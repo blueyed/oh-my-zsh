@@ -163,7 +163,7 @@ gb() {
 
     (( $#format_lines )) || return
 
-    local orig_cols orig_col1 sha
+    local orig_cols refname_short sha
     local cur_sha="$($_git_cmd rev-parse --verify -q --short HEAD)"
     local prev_sha="$($_git_cmd rev-parse --verify -q --short @{-1})"
     for i in {1..$#format_lines}; do
@@ -177,7 +177,7 @@ gb() {
 
       # Prepend different colors.
       orig_cols=(${(s:\0:)lines[$i]})
-      orig_col1=${orig_cols[1]}
+      refname_short=${${(s: :)orig_cols[1]}[1]}
       sha="${orig_cols[-1]}"
       if [[ $sha == $cur_sha ]]; then
         split[1]="* $split[1]"
@@ -187,10 +187,10 @@ gb() {
         split[1]="  $split[1]"
       fi
 
-      if [[ $orig_col1 == $current ]]; then
+      if [[ $refname_short == $current ]]; then
         # split[1]="${(%):-%B}${split[1]}${(%):-%b}"
         split[1]="${color_current}$split[1]"
-      elif [[ $orig_col1 == */* ]]; then
+      elif [[ $refname_short == */* ]]; then
         split[1]="${color_remote}$split[1]"
       else
         split[1]="${color_local}$split[1]"
