@@ -73,6 +73,7 @@ gb() {
     # XXX: there's a problem with ANSI escape codes, which get considered by
     # zformat, although invisible.
 
+    local color_upstream=${(%):-'%F{blue}'}
     local color_object=${(%):-'%F{yellow}'}
     local color_date=${(%):-'%F{cyan}'}
     local color_subject=${(%):-'%B%f'}
@@ -84,7 +85,7 @@ gb() {
     local line
     typeset -a lines info_string
     info_string=(
-      "%(refname:short)"
+      "%(refname:short) ${color_upstream}%(upstream:trackshort)${reset_color}"
       "%(authorname)"
       "${color_date}%(committerdate:format:%Y-%m-%d %H:%M)${reset_color}"
       "${color_subject}%(subject)${reset_color}"
