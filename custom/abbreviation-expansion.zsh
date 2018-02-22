@@ -5,13 +5,9 @@
 # less risky than the global aliases but powerful as well
 # just type the abbreviation key and afterwards 'ctrl-x .' to expand it
 declare -A abk
-setopt extendedglob
-setopt interactivecomments
 abk=(
 #   key   # value                  (#d additional doc string)
 #A# start
-    '...'  '../..'
-    '....' '../../..'
     'BG'   '& exit'
     'C'    '| wc -l'
     'G'    '|& grep --color=auto '
@@ -26,6 +22,7 @@ abk=(
     'S'    '| sort -u'
     'T'    '| tail'
     'V'    '|& vim -'
+    'B'    '$(current_branch)'
 #A# end
     'co'   './configure && make && sudo make install'
 )
@@ -53,6 +50,5 @@ help-show-abk()
 zle -N help-show-abk
 
 
-# bindkey ",." globalias
 bindkey '^x.' zleiab
 bindkey '^xb' help-show-abk

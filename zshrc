@@ -956,6 +956,9 @@ zle -N self-insert url-quote-magic
 ## jobs
 setopt long_list_jobs
 
+# Allow for comments after '#' with interactive shells.
+setopt interactivecomments
+
 ## pager
 export PAGER="less"
 
