@@ -455,6 +455,12 @@ _git_command_with_message_and_files() {
 _git_command_with_message() {
   local cmd msg
   cmd=($=1); shift
+
+  # Handle any args before the message.
+  while [[ $1 == -* ]] && [[ $1 != -- ]]; do
+    cmd+=($1); shift
+  done
+
   if (( $# )); then
     cmd+=(-m "$*")
   else
@@ -466,7 +472,11 @@ _git_command_with_message() {
 # Commit with message: no glob expansion and error on non-match.
 alias gcm='noglob _git_command_with_message_and_files "git commit"'
 # Amend directly (with message): no glob expansion and error on non-match.
-alias gcma='noglob _git_command_with_message "git commit --amend"'
+gcma() {
+  _git_command_with_message "git commit --amend" "$@"
+}
+alias gcma='noglob gcma'
+complete_function gcma git commit --amend
 
 # Commit index after creating a branch based on the msg's first line.
 gcobucm() {
