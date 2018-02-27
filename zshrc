@@ -696,15 +696,13 @@ lf() {
 # Display files sorted by size.
 function dusch() {
   # setopt extendedglob bareglobqual
-  du -sch -- ${~^@:-"*"}(D) | sort -rh
+  du -sch -- ${~^@:-"*"}(ND) | sort -rh
 }
 alias dusch='noglob dusch'
 
 function pip() {
   command pip "$@" && rehash
 }
-alias pip='noglob pip'
-alias spip='noglob sudo pip'
 
 # Print host + cwd.
 alias phwd='print -rP %M:%/'
@@ -720,9 +718,7 @@ dG() {
   done
 }
 
-alias ag='noglob ag --smart-case'
-# Wrapper script with default options in ~/.dotfiles/usr/bin/rg.
-alias rg='noglob rg'
+alias ag='ag --smart-case'
 
 
 # Make aliases work with sudo; source: http://serverfault.com/a/178956/14449
