@@ -989,9 +989,14 @@ reloadzsh() {
   ZSHRC_EXEC_COMMAND= source ~/.zshrc
 }
 
+# CDPATH: only for interactive shells, and do not export it.
+typeset -U cdpath
+cdpath=(~/projects ~/src ~/Vcs ~/.dotfiles/vim/plugged ~/.dotfiles/vim/neobundles ~/.dotfiles/lib)
+# For AUR builds in Arch Linux.
+[[ -d ~/builds ]] && cdpath+=(~/builds)
 
 # Source local rc file if any.
-[ -f ~/.zshrc.local ] && source ~/.zshrc.local
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # Change to previous dir (requires dirstack), but not for login shells.
 if ! (( $+ZSH_NO_CD_DASH )) && ! [[ -o login ]] && ! (( $+TMUX )); then
