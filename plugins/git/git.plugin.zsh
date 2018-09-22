@@ -1013,10 +1013,6 @@ ggpushb() {
 compdef _git ggpushb=git-push
 alias gpb='ggpushb --set-upstream'
 
-# Setup wrapper for git's editor. It will use just core.editor for other
-# files (e.g. patch editing in `git add -p`).
-export GIT_EDITOR=vim-for-git
-
 # these alias ignore changes to file
 alias gignore='git update-index --assume-unchanged'
 alias gunignore='git update-index --no-assume-unchanged'
