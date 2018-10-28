@@ -296,6 +296,8 @@ gbmcleanup() {
       local display_progress=$(($#not_merged > 20))
       local -F 2 start duration
       local last_b
+      local max_revs=1000
+      local -A skipped_max=()
       for b in $not_merged; do
         if [[ -n "$last_b" ]]; then
           duration=$(( ($(print -P '%D{%s%.}') - start) / 1000 ))
@@ -319,7 +321,12 @@ gbmcleanup() {
           # should be OK.
           rev_list=(${(f)"$($_git_cmd rev-list --abbrev-commit "$merge_base..HEAD")"})
           branch_diff=$($_git_cmd diff "$merge_base" $b --)
+          local c=0
           for i in $rev_list; do
+            if (( ++c == max_revs )); then
+              skipped_max+=($b $#rev_list)
+              break
+            fi
             if [[ -z "${rev_diff[$i]}" ]]; then
               rev_diff[$i]="$(git diff "$i^" "$i" --)"
             fi
@@ -339,6 +346,13 @@ gbmcleanup() {
         fi
       done
       (( display_progress )) && echo
+      if (( $#skipped_max )); then
+        local info=()
+        for k in ${(k)skipped_max}; do
+          info+=("$k ($skipped_max[$k])")
+        done
+        echo "NOTE: skipped $#skipped_max branches due to max ($max_revs) reached: ${(j:, :)info}."
+      fi
     else
       echo "NOTE: Not testing $#not_merged non-merged branches, use -m." >&2
     fi
