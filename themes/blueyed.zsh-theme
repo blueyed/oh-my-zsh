@@ -1069,7 +1069,7 @@ _zsh_prompt_vcs_info=()
 
 zstyle ':vcs_info:*+start-up:*' hooks start-up
 +vi-start-up() {
-    ret=1  # do not run by default.
+    ret=1  # Do not run by default.
     if [[ -n $_ZSH_VCS_INFO_FORCE_GETDATA ]]; then
         _ZSH_VCS_INFO_LAST_MTIME=
         ret=0
@@ -1105,26 +1105,25 @@ zstyle ':vcs_info:*+pre-get-data:*' hooks pre-get-data
 +vi-pre-get-data() {
     _ZSH_VCS_INFO_CUR_VCS=$vcs  # for start-up hook.
 
-    # Only Git and Mercurial support and need caching. Abort if any other
-    # VCS is used.
+    # Only Git and Mercurial support need caching. Abort for any other.
     [[ "$vcs" != git && "$vcs" != hg ]] && return
 
-    if [[ -n $_ZSH_VCS_INFO_DIR_CHANGED ]]; then
-        _ZSH_VCS_INFO_DIR_CHANGED=
-        if [[ $vcs == git ]]; then
-            local gitdir=${${vcs_comm[gitdir]}:a}
-            if [[ $gitdir != $_ZSH_VCS_INFO_CUR_GITDIR ]]; then
-                _ZSH_VCS_INFO_FORCE_GETDATA=1
-                _ZSH_VCS_INFO_CUR_GITDIR=$gitdir
-                _ZSH_VCS_INFO_LAST_MTIME=
-                _zsh_prompt_vcs_info+=("%{${fg[cyan]}%}⟳(cd)")
-            fi
-        else
-            # Changed to some non-git dir.
+    # Check if gitdir changed.
+    # This is done always to handle git-init (without changing cwd).
+    if [[ $vcs == git ]]; then
+        local gitdir=${${vcs_comm[gitdir]}:a}
+        if [[ $gitdir != $_ZSH_VCS_INFO_CUR_GITDIR ]]; then
             _ZSH_VCS_INFO_FORCE_GETDATA=1
-            _ZSH_VCS_INFO_CUR_GITDIR=
-            _zsh_prompt_vcs_info+=("%{${fg[cyan]}%}⟳(cd2)")
+            _ZSH_VCS_INFO_CUR_GITDIR=$gitdir
+            _ZSH_VCS_INFO_LAST_MTIME=
+            _zsh_prompt_vcs_info+=("%{${fg[cyan]}%}⟳(cd)")
         fi
+    elif [[ -n $_ZSH_VCS_INFO_DIR_CHANGED ]]; then
+        _ZSH_VCS_INFO_DIR_CHANGED=
+        # Changed to some non-git dir.
+        _ZSH_VCS_INFO_FORCE_GETDATA=1
+        _ZSH_VCS_INFO_CUR_GITDIR=
+        _zsh_prompt_vcs_info+=("%{${fg[cyan]}%}⟳(cd2)")
     fi
 
     if [[ $vcs == git && -z $_ZSH_VCS_INFO_LAST_MTIME ]]; then
