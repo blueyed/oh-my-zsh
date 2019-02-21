@@ -1,0 +1,26 @@
+# Run tox in /tmp/tox by default.
+#
+# Uses absolute path with --workdir to not cause issues like
+# https://github.com/nedbat/coveragepy/issues/777.
+local toxdir toxini
+
+toxini=(./(../)#tox.ini(NY1))
+if (( $#toxini )); then
+  toxdir=${toxini:h}/.tox
+else
+  toxdir=
+  echo 'WARN: no tox.ini found.' >&2
+fi
+if ! [[ -e $toxdir ]]; then
+  if [[ -L $toxdir ]]; then
+    toxdir="$(readlink -m $toxdir)"
+  else
+    ln -s "/tmp/tox$PWD" $toxdir
+    toxdir="/tmp/tox$PWD"
+  fi
+  mkdir -p "$toxdir"
+else
+  toxdir="$(readlink -m $toxdir)"
+fi
+
+python -m tox --workdir="$toxdir" "$@"
