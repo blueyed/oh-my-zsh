@@ -23,4 +23,4 @@ else
   toxdir="$(readlink -m $toxdir)"
 fi
 
-python -m tox --workdir="$toxdir" "$@"
+command tox --workdir="$toxdir" "$@"
