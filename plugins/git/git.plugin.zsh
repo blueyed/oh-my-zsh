@@ -200,7 +200,7 @@ gb() {
     done
 
     # Display it using "less", but only to cut at $COLUMNS.
-    echo ${${(j:\n:)lines}} | less --no-init --chop-long-lines --QUIT-AT-EOF
+    printf '%s\n' $lines | less --no-init --chop-long-lines --QUIT-AT-EOF
   fi
 }
 compdef -e 'words=(git branch "${(@)words[2,-1]}"); ((CURRENT++)); _normal' gb
