@@ -90,9 +90,8 @@ fi
 fpath=(~/.dotfiles/lib/zsh-completions/src $fpath)
 
 # Define FZF_DEFAULT_OPTS before the theme gets loaded.
-# Should not be overwritten in case it exists (tmux).
-if (( $+commands[fzf] )) && ! (( $+FZF_DEFAULT_OPTS )); then
-  export FZF_DEFAULT_OPTS=--extended
+if ! (( $+FZF_DEFAULT_OPTS )); then
+  export FZF_DEFAULT_OPTS="--color=16,bg+:18,gutter=18 --extended --inline-info"
 fi
 
 # Autoload all functions.  Needs to come before theme for is_ssh/is_remote.
