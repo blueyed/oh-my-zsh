@@ -291,7 +291,7 @@ gbmcleanup() {
 
   if (( $#not_merged )); then
     if (( $test_merges )); then
-      local diff out rev_list merge_base
+      local diff lines out rev_list merge_base
       local -A rev_diff
       local display_progress=$(($#not_merged > 20))
       local -F 2 start duration
@@ -312,11 +312,12 @@ gbmcleanup() {
         # Otherwise "merged" means that it could be merged without conflicts.
         merge_base=$($_git_cmd merge-base HEAD "$b")
         cmd=($_git_cmd merge-tree $merge_base HEAD "$b")
-        out=("${(@f)$($cmd)}")
-        if ! print -l $out | \grep -q '^@@'; then
+        out="$($cmd)"
+        if ! [[ "$out" == *$'\n@@'* ]]; then
           no_diff+=($b "empty merge")
           continue
         else
+          lines=("${(f)out}")
           # Check for cherry-picks, that cause a conflict with merge-tree, but
           # should be OK.
           rev_list=(${(f)"$($_git_cmd rev-list --abbrev-commit "$merge_base..HEAD")"})
@@ -328,20 +329,24 @@ gbmcleanup() {
               break
             fi
             if [[ -z "${rev_diff[$i]}" ]]; then
-              rev_diff[$i]="$(git diff "$i^" "$i" --)"
+              # Might cause "fatal: bad revision '6b135c83^'" (pytest repo)
+              if ! rev_diff[$i]="$(git diff "$i^" "$i" -- 2>&1)"; then
+                echo "error: $b: $rev_diff[$i] (merge-base: $merge_base, $c/$#rev_list)"
+                continue
+              fi
             fi
             if [[ "$rev_diff[$i]" == "$branch_diff" ]]; then
               no_diff+=($b "cherry-picked in $($_git_cmd name-rev $i)")
-              continue
+              break
             fi
           done
         fi
         if (( $verbose )); then
           if (( $#only )); then
             echo "cmd: $cmd" >&2
-            print -l $out >&2
+            print -l $lines >&2
           else
-            echo "$out[1]: $branch_color$b$reset_color ($#out lines)" >&2
+            echo "$lines[1]: $branch_color$b$reset_color ($#lines lines)" >&2
           fi
         fi
       done
