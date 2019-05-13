@@ -234,7 +234,7 @@ alias gbsr='git bisect reset'
 gbmcleanup() {
   setopt localoptions errreturn
   local -a opts only
-  zparseopts -D -a opts f q h i n l m v o+:=only
+  zparseopts -D -a opts f q h i n l m v o+:=only k+:=keep
   local curb merged
   local -A no_diff
   local from_branches='^(master|develop)$'
@@ -242,12 +242,14 @@ gbmcleanup() {
 
   if (( $opts[(I)-h] )); then
     echo "Cleans merged branches."
-    echo "$0 [-i] [-f] [-n] [-l] [-m] [-v] [-o branch]"
+    echo "$0 [-i] [-f] [-n] [-l] [-m] [-v] [-o branch]… [-k branch]…"
     echo " -l: list"
     echo " -n: dry run"
     echo " -i: interactive (show diff for each branch, asking for confirmation)"
     echo " -f: force"
     echo " -m: test for empty merges"
+    echo " -o: only test specified branches"
+    echo " -k: keep specified branches"
     echo " -v: verbose"
     return
   fi
@@ -258,6 +260,7 @@ gbmcleanup() {
   local test_merges=$opts[(I)-m]
   local verbose=$opts[(I)-v]
   only=(${only:#-o})
+  keep=(${keep:#-k})
   local branch="$1"
 
   if [[ -z "$branch" ]]; then
@@ -277,6 +280,9 @@ gbmcleanup() {
 
   merged=($($_git_cmd branch --merged $branch | sed -E "/^[* ] $branch\$/d" \
     | cut -b3- | sed -E "/$keep_branches/d"))
+  if [[ -n $keep ]]; then
+    merged=(${merged:|keep})
+  fi
 
   local b not_merged
   not_merged=(${(f)"$($_git_cmd branch --no-merged | cut -b3- \
