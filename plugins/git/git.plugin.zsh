@@ -681,14 +681,13 @@ alias gstu='git --no-pager status --untracked-files=normal'
 
 # git-stash.
 gsts() {
-  local stash
   if [[ -n "$1" ]]; then
     [[ "$1" = <-> ]] && skip=$1 || skip=${${1#stash@\{}%\}}
   else
     skip=0
   fi
-  # Use "list" to get the stash subject.
-  $_git_cmd stash list --text -p --stat -1 --skip=$skip $stash
+  # Use "list" to get the stash subject, date etc.
+  $_git_cmd stash list --text -p --stat -1 --skip=$skip --format=short
 }
 compdef -e 'words=(git stash show "${(@)words[2,-1]}"); ((CURRENT+=2)); _normal' gsts
 
