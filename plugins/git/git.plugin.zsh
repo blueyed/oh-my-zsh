@@ -278,15 +278,18 @@ gbmcleanup() {
     return 1
   fi
 
-  merged=($($_git_cmd branch --merged $branch | sed -E "/^[* ] $branch\$/d" \
-    | cut -b3- | sed -E "/$keep_branches/d"))
+  local sed_branch="${branch//\//\\/}"
+  local sed_keep_branches="${keep_branches//\//\\/}"
+
+  merged=($($_git_cmd branch --merged $branch | sed -E "/^[* ] $sed_branch\$/d" \
+    | cut -b3- | sed -E "/$sed_keep_branches/d"))
   if [[ -n $keep ]]; then
     merged=(${merged:|keep})
   fi
 
   local b not_merged
   not_merged=(${(f)"$($_git_cmd branch --no-merged | cut -b3- \
-    | sed -E "/$keep_branches/d")"})
+    | sed -E "/$sed_keep_branches/d")"})
   if [[ -n $only ]]; then
     not_merged=(${not_merged:*only})
   fi
