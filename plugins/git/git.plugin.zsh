@@ -21,15 +21,16 @@ get_remove_ansi_codes() {
 # Function for "git branch", handling the "list" case, by sorting it according
 # to committerdate, and displaying it.
 gb() {
-  setopt localoptions rcexpandparam
+  setopt localoptions rcexpandparam errreturn
   local refs limit=100
+  local format_date
 
   if [[ $# == 0 ]]; then
     refs=(refs/heads)
   else
-    # Parse -r and -a for special handling.
+    # Parse some options for special handling.
     local parsed_opts
-    zparseopts -D -E -a parsed_opts r a
+    zparseopts -D -E -A parsed_opts r a -date:-
 
     # Parse all other args/opts.
     typeset -a opts args
@@ -42,9 +43,13 @@ gb() {
     done
 
     if (( $#parsed_opts )); then
-      if (( $parsed_opts[(I)-r] )); then
+      if [[ -n $parsed_opts[--date] ]]; then
+        format_date=$parsed_opts[--date]
+      fi
+
+      if [[ -n $parsed_opts[(I)-r] ]]; then
         refs=(refs/remotes)
-      elif (( $parsed_opts[(I)-a] )); then
+      elif [[ -n $parsed_opts[(I)-a] ]]; then
         refs=(refs/heads refs/remotes)
       fi
     fi
@@ -84,11 +89,14 @@ gb() {
     local current=$(current_branch)
     local line
     typeset -a lines info_string
+    local today=${(%):-'%D{%Y-%m-%d}'}
+    local this_yearmonth=${(%):-'%D{%Y-%m}'}
+    local this_year=${(%):-'%D{%Y}'}
     info_string=(
-      "%(refname:short) ${color_upstream}%(upstream:trackshort)${reset_color}"
+      "%(refname:short) ${color_upstream}%(upstream:trackshort)%(upstream:remotename)"
       "%(authorname)"
-      "${color_date}%(committerdate:format:%Y-%m-%d %H:%M)${reset_color}"
-      "${color_subject}%(subject)${reset_color}"
+      "${color_date}%(committerdate:${format_date:-relative})"
+      "${color_subject}%(subject)"
       "%(objectname:short)"
     )
     local my_name="$($_git_cmd config user.name)"
@@ -108,21 +116,40 @@ gb() {
     for idx in {1..$#branch_info}; do
       b=(${(s:\0:)branch_info[idx]})
 
+      # shorten upstream info: remove mine+origin.
+      b[1]=(${b[1]%(blueyed|origin)})
+
       # Describe object name (and keep orig sha for comparison with prev_sha).
       b[6]=${b[5]}
-      b[5]="${color_object}${branches_describe[$idx]}${reset_color}"
+      # b[5]="${color_object}$($_git_cmd describe --contains --always $b[5])${reset_color}"
+      b[5]="${color_object}${branches_describe[$idx]}"
 
       # Decorate or remove author name.
       author_name=$b[2]
       b=($b[1] $b[3,-1])
       if [[ $author_name != $my_name ]]; then
-        b[3]="$b[3] (${color_author}$author_name${reset_color})"
-      else
-        # Include escape codes for zformat alignment.
-        b[3]="$b[3] ${color_author}${reset_color}"
+        b[3]="$b[3]${reset_color} (${color_author}$author_name${reset_color})"
+      # else
+      #   # Include escape codes for zformat alignment.
+      #   # b[3]="$b[3] ${color_author}"
       fi
 
-      lines+=("${b[1]}\0${(j-\0-)${(@)b[2,-1]}}")
+      if [[ -z $format_date ]]; then
+        # Shorten date (remove Y-m-d, Y-m, and Y prefixes).
+        # b[2]=(${b[2]/${color_date}${today} /${color_date}})
+        # b[2]=(${b[2]/${color_date}${this_yearmonth}-/${color_date}})
+        # b[2]=(${b[2]/${color_date}${this_year}-/${color_date}})
+        b[2]=(${b[2]% ago})
+        b[2]=(${b[2]/ years#/y})
+        b[2]=(${b[2]/ months#/M})
+        b[2]=(${b[2]/ weeks#/w})
+        b[2]=(${b[2]/ days#/d})
+        b[2]=(${b[2]/ hours#/h})
+        b[2]=(${b[2]/ minutes#/m})
+        b[2]=(${b[2]/, /+})
+      fi
+
+      lines+=("${b[1]}${reset_color}\0${(j-\0-)${(@)b[2,-1]}}")
     done
 
     # Use zformat recursively, which requires escaping ":" on the left side.
