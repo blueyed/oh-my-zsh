@@ -1,0 +1,139 @@
+#compdef pytest py.test
+
+# Features:
+#
+# - completes tags (via Zsh's _complete_tag) for `-k`
+#   TODO: complete tags of file after `pytest test_foo.py::`.
+#   TODO: only return class/function ctag kinds.
+
+local ret=1
+
+local context state state_descr line
+typeset -A opt_args
+
+
+_pytest_caching_policy () {
+  local ret  # 0 means that the cache needs to be rebuilt.
+
+  # Compare cache file's timestamp to the most recently modified sys.path entry.
+  # This gets changed/touched when installing/removing packages.
+  local newest_sys_path=$(python -c '
+import sys
+from os.path import exists, getmtime
+print(sorted(sys.path, key=lambda x: exists(x) and getmtime(x))[-1])')
+  if [[ $newest_sys_path -nt $1 ]]; then
+    # Gets overwritten by later message ("Querying...")
+    # zle -M "Newest sys.path entry is older than $1 - rebuilding cache.."
+    return 0
+  fi
+  return 1
+}
+
+local -a pytest_options
+_pytest_options() {
+  # This function calls pytest and loops over the list of apps and options
+  # and constructs the help menu with it.
+
+  local cache_policy
+  zstyle -s ":completion:${curcontext}:" cache-policy cache_policy
+  if [[ -z "$cache_policy" ]]; then
+    zstyle ":completion:${curcontext}:" cache-policy _pytest_caching_policy
+  fi
+
+  if _cache_invalid pytest_options || ! _retrieve_cache pytest_options; then
+    zle -M 'Querying pytest options...'
+
+    # TODO:
+    # - start sections with '^reporting:' etc.
+
+    local line
+    local _words opts i desc
+    local opt
+    local in_desc
+    local unwrapped_opts name
+    _call_program commands pytest --help | while IFS='' read line; do
+      # add dashed options for completion only
+      if [[ $line[1,3] == '  -' ]] || [[ -z "$line" ]]; then
+
+        desc="${(L)desc[1]}${desc[2,-1]}"
+        desc="${desc%.}"
+        if (( $#opts )); then
+          unwrapped_opts=()
+          for opt in $opts; do
+            if [[ $opt[1,7] == '--[no-]' ]]; then
+              name=${opt[8,-1]}
+              unwrapped_opts+=("--${name}" "--no-${name}")
+            else
+              unwrapped_opts+=("${opt}")
+            fi
+          done
+          opts=($unwrapped_opts)
+
+          if (( $#opts > 1 )); then
+            for opt in $opts; do
+              pytest_options+=("(${opts})${opt}[${desc}]")
+            done
+          else
+            pytest_options+=("${opts}[$desc]")
+          fi
+        fi
+
+        opts=()
+        desc=
+        in_desc=0
+        [[ -z "$line" ]] && continue
+      elif (( in_desc )); then
+        shortdesc=${line## #}
+        # TODO: punctuation
+        # if [[ "$shortdesc" != "$desc" ]]; then
+        #   in_desc=0
+        # fi
+        desc="$desc ${${shortdesc:gs/[/\\[}:gs/]/\\]}"
+        continue
+      fi
+
+      _words=($=line)
+      # [[ ${_words[1][1]} == '-' ]] || continue
+
+      i=0
+      for w in $_words; do
+        (( i++ ))
+        if [[ $w[1] == '-' ]]; then
+          opt="${w%,}"
+          # Remove `=` operator example values from the help output
+          opt="${opt%%=*}"
+
+          # -k is defined manually.
+          [[ "$opt" == "-k" ]] && break
+          opts+=($opt)
+        else
+          desc=${_words[i,-1]}
+          if [[ -z "$desc" ]]; then
+            in_desc=1
+            break
+          fi
+          desc=${${desc:gs/[/\\[}:gs/]/\\]}
+          in_desc=1
+          # TODO: do not split on "e.g.": look at end and ". " only?!
+          # shortdesc=${desc%%.*}
+          # if [[ "$shortdesc" == "$desc" ]]; then
+          #   in_desc=1
+          # fi
+          # desc="$shortdesc"
+          break
+        fi
+      done
+      zle -M ''
+    done
+    pytest_options+=('-k[only run tests matching the substring expression]:tag:_complete_tag')
+    _store_cache pytest_options pytest_options
+  fi
+}
+
+_pytest_options
+
+_arguments -C \
+  '*:file:_files' \
+  $pytest_options && ret=0
+
+return $ret
