@@ -264,8 +264,8 @@ gbmcleanup() {
   zparseopts -D -a opts f q h i n l m v o+:=only k+:=keep
   local curb merged
   local -A no_diff
-  local from_branches='^(master|develop)$'
-  local keep_branches='^(master|develop|local)$'
+  local from_branches='^(main|master|develop)$'
+  local keep_branches='^(main|master|develop|local|release-.*|.*-maintenance)$'
 
   if (( $opts[(I)-h] )); then
     echo "Cleans merged branches."
